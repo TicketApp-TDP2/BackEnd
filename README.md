@@ -6,7 +6,7 @@ Repositorio para el backend del proyecto TicketApp de la materia Taller de Desar
 ## API
 
 ### Develop: http://localhost:{PORT}/api/
-### Production: http:///api/
+### Production: http://https://ticketapp-backend.onrender.com/api/
 
 ## Run the server
 
