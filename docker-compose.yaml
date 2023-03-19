@@ -1,0 +1,35 @@
+version: "3"
+services:
+  proy2-backend:
+    build: ./
+    image: proy2-backend
+    volumes:
+      - ./app:/root/app
+      - ./test:/root/test
+    container_name: proy2-backend
+    ports:
+      - ${PORT}:${PORT}
+    env_file:
+      - .env
+    networks:
+      - proy2-net
+
+  proy2-mongo:
+    image: mongo
+    container_name: proy2-mongo
+    volumes:
+      # - ./db/data:/data/db with this, data will be persisted
+      - ./db/config:/etc/mongo/
+        # environment:
+        #     - MONGO_INITDB_ROOT_USERNAME='root'
+        #     - MONGO_INITDB_ROOT_PASSWORD='pass'
+    networks:
+      - proy2-net
+    command: --config /etc/mongo/mongod.conf
+networks:
+  proy2-net:
+    ipam:
+      config:
+        - subnet: 172.25.125.0/24
+      driver: default
+    name: proy2-net
