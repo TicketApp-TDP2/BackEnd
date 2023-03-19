@@ -52,5 +52,5 @@ def test_user_create_succesfully():
     data = response.json()
     assert "id" in data
     body["id"] = data["id"]
-    body["cards"] = []
+    body["cards"] = ["a"]
     assert body == data
