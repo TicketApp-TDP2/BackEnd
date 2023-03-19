@@ -1,7 +1,7 @@
 import os
 
 PORT = int(os.environ.get('PORT', 8080))
-DB_URL = os.environ.get('DB_URL')
+DB_URL = os.getenv('DB_URL')
 DB_NAME = os.environ.get('DB_NAME', "TicketApp")
 ENV_NAME = os.environ.get('ENV_NAME')
 MAX_IMAGE_SIZE = int(os.environ.get('MAX_IMAGE_SIZE', 10_000_000))
