@@ -14,3 +14,7 @@ new-server: kill-server start-server
 test-server:
 	docker-compose run --rm -e ENV_NAME="TEST" proy2-backend poetry run pytest
 
+test-server-cov:
+	docker-compose run --rm -e ENV_NAME="TEST" proy2-backend poetry run pytest --cov=app
+
+
