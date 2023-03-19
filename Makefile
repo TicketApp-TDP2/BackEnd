@@ -12,5 +12,5 @@ kill-server:
 new-server: kill-server start-server
 
 test-server:
-	docker-compose run --rm -e ENV_NAME="TEST" -e PORT="8080" proy2-backend poetry run pytest
+	docker-compose run --rm -e ENV_NAME="TEST" proy2-backend poetry run pytest
 

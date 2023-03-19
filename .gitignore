@@ -1,5 +1,4 @@
 pyrightconfig.json
-.env
 .python-version
 .pytest_cache
 **/logs
