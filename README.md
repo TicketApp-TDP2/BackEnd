@@ -1,7 +1,6 @@
 # TDP2-TicketApp
 
 [![TicketApp CI](https://github.com/TicketApp-TDP2/BackEnd/actions/workflows/makefile.yml/badge.svg)](https://github.com/TicketApp-TDP2/BackEnd/actions/workflows/makefile.yml)
-
 [![codecov](https://codecov.io/gh/TicketApp-TDP2/BackEnd/branch/main/graph/badge.svg?token=DJPEBEN41O)](https://codecov.io/gh/TicketApp-TDP2/BackEnd)
 
 

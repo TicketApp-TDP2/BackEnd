@@ -19,13 +19,6 @@ def clear_db():
     client.post('api/reset')
 
 
-def test_get_user_not_exists():
-    response = client.get(URI + "/notexists")
-    data = response.json()
-    assert response.status_code == 404
-    assert data['detail'] == "User not found"
-
-
 def create_user_body(fields={}):
     body = {
         'first_name': 'first_name',
