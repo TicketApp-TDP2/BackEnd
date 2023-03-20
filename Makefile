@@ -15,6 +15,6 @@ test-server:
 	docker-compose run --rm -e ENV_NAME="TEST" proy2-backend poetry run pytest
 
 test-server-cov:
-	docker-compose run --rm -e ENV_NAME="TEST" -v "./coverage:/coverage" proy2-backend poetry run pytest --cov=app --cov-report xml:/coverage/coverage.xml
+	docker-compose run --rm -e ENV_NAME="TEST" -v "$(CURDIR)/coverage:/coverage" proy2-backend poetry run pytest --cov=app --cov-report xml:/coverage/coverage.xml
 
 
