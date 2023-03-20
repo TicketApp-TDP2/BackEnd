@@ -22,5 +22,5 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         flags: unittests
-        file: ./coverage.xml
+        flag-f: ./coverage.xml
 
