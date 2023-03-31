@@ -5,6 +5,16 @@ from typing import List, Optional, Tuple
 from app.models.event import Event, Type
 
 
+class SearchEvent(BaseModel):
+    lat: Optional[float]
+    lng: Optional[float]
+    dist: int = Field(default=5_000)
+    organizer: Optional[str]
+    type: Optional[Type]
+    limit: int = Field(default=5)
+    title: Optional[str]
+
+
 class LocationSchema(BaseModel):
     description: str = Field(..., min_length=3)
     lat: float

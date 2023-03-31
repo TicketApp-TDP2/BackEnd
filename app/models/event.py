@@ -13,6 +13,7 @@ class Location:
 
 class Type(Enum):
     ToDefine = "aTypeToBeDefined"
+    AnotherToDefine = "anotherTypeToBeDefined"
 
 
 class Event:

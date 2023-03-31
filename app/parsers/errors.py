@@ -22,3 +22,9 @@ class ImageGroupSizeError(ParserError):
     def __init__(self):
         msg = "Image group size is too large"
         super().__init__(msg)
+
+
+class LocationIncompleteError(ParserError):
+    def __init__(self):
+        msg = "Location incomplete in search"
+        super().__init__(msg)

@@ -7,6 +7,7 @@ from app.schemas.event import (
 from .errors import EventAlreadyExistsError, EventNotFoundError
 from app.repositories.event import (
     EventRepository,
+    Search,
 )
 from app.config.logger import setup_logger
 
@@ -64,3 +65,17 @@ class GetEventCommand:
         event = self.event_repository.get_event(self.id)
 
         return EventSchema.from_model(event)
+
+
+class SearchEventsCommand:
+    def __init__(
+        self,
+        event_repository: EventRepository,
+        search: Search,
+    ):
+        self.event_repository = event_repository
+        self.search = search
+
+    def execute(self) -> List[EventSchema]:
+        events = self.event_repository.search_events(self.search)
+        return list(map(EventSchema.from_model, events))

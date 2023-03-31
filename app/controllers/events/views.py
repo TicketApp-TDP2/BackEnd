@@ -1,11 +1,14 @@
 from fastapi.exceptions import HTTPException
 from app.repositories.event import PersistentEventRepository
+from app.commands.events.events import SearchEventsCommand
+from app.parsers.search_parser import SearchEventsParser
 from typing import List
 from fastapi import Depends, status, APIRouter
 from app.config.logger import setup_logger
 from app.schemas.event import (
     EventCreateSchema,
     EventSchema,
+    SearchEvent,
 )
 from app.commands.events import (
     CreateEventCommand,
@@ -55,3 +58,24 @@ async def get_event(id: str):
         )
 
     return event
+
+
+@router.get(
+    '/events',
+    status_code=status.HTTP_200_OK,
+    response_model=List[EventSchema],
+)
+async def search_events(params: SearchEvent = Depends()):
+    try:
+        search = SearchEventsParser().parse(params)
+        repository = PersistentEventRepository()
+        events = SearchEventsCommand(repository, search).execute()
+    except TicketAppError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Error"
+        )
+
+    return events

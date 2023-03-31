@@ -19,6 +19,22 @@ class SearchLocation:
         self.dist = dist
 
 
+class Search:
+    def __init__(
+        self,
+        organizer: Optional[str],
+        type: Optional[Type],
+        location: Optional[SearchLocation],
+        limit: int,
+        title: str,
+    ):
+        self.organizer = organizer
+        self.type = type
+        self.location = location
+        self.limit = limit
+        self.title = title
+
+
 class EventRepository(ABC):
     @abstractmethod
     def add_event(self, event: Event) -> Event:
@@ -30,6 +46,10 @@ class EventRepository(ABC):
 
     @abstractmethod
     def event_exists(self, id: str) -> bool:
+        pass
+
+    @abstractmethod
+    def search_events(self, search: Search) -> List[Event]:
         pass
 
 
@@ -53,6 +73,33 @@ class PersistentEventRepository(EventRepository):
     def event_exists(self, id: str) -> bool:
         event = self.events.find_one({'_id': id})
         return event is not None
+
+    def search_events(self, search: Search) -> List[Event]:
+        serialized_search = self.__serialize_search(search)
+        events = self.events.find(serialized_search).limit(search.limit)
+        return list(map(self.__deserialize_event, events))
+
+    def __serialize_search(self, search: Search) -> dict:
+        srch = {
+            'organizer': search.organizer,
+            'type': search.type and search.type.value,
+        }
+
+        if search.title:
+            srch['title'] = {'$regex': search.title, '$options': 'i'}
+
+        if search.location:
+            lng = search.location.lng
+            lat = search.location.lat
+            dist = search.location.dist
+            srch['location'] = SON(
+                [
+                    ("$nearSphere", [lng, lat]),
+                    ("$maxDistance", dist / EARTH_RADIUS_METERS),
+                ]
+            )
+
+        return {k: v for k, v in srch.items() if v is not None}
 
     def __serialize_event(self, event: Event) -> dict:
 
