@@ -31,9 +31,10 @@ def create_organizer_body(fields={}):
         'first_name': 'first_name',
         'last_name': 'last_name',
         'email': 'email@mail.com',
-        'identification_number': '40400400',
-        'phone_number': '1180808080',
-        "birth_date": "1990-01-01",
+        'profession': 'profession',
+        'about_me': 'about_me',
+        'profile_picture': 'profile_picture',
+        'id': '123',
     }
 
     for k, v in fields.items():
@@ -72,7 +73,10 @@ def test_organizer_create_wrong_body():
         'first_name': [None, '', 'aa'],
         'last_name': [None, '', 'aa'],
         'email': [None, '', 'email', 'a', 'email.com'],
-        'birth_date': [None, '', 'a', 'aa'],
+        'profession': [None, '', 'aa'],
+        'about_me': [None, '', 'aa'],
+        'profile_picture': [None, '', 'aa'],
+        'id': [None, ''],
     }
 
     invalid_bodies = generate_invalid(body, invalid_variations)

@@ -71,9 +71,9 @@ class PersistentOrganizerRepository(OrganizerRepository):
             'first_name': organizer.first_name,
             'last_name': organizer.last_name,
             'email': organizer.email,
-            'birth_date': organizer.birth_date,
-            'identification_number': organizer.identification_number,
-            'phone_number': organizer.phone_number,
+            'profession': organizer.profession,
+            'about_me': organizer.about_me,
+            'profile_picture': organizer.profile_picture,
         }
 
         return serialized
@@ -84,7 +84,7 @@ class PersistentOrganizerRepository(OrganizerRepository):
             first_name=data['first_name'],
             last_name=data['last_name'],
             email=data['email'],
-            birth_date=data['birth_date'],
-            identification_number=data['identification_number'],
-            phone_number=data['phone_number'],
+            profession=data['profession'],
+            about_me=data['about_me'],
+            profile_picture=data['profile_picture'],
         )

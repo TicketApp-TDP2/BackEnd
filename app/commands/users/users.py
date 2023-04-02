@@ -5,7 +5,6 @@ from app.repositories import (
     UserRepository,
 )
 from app.config.logger import setup_logger
-import uuid
 
 logger = setup_logger(__name__)
 
@@ -23,9 +22,11 @@ class CreateUserCommand:
             birth_date=self.user_data.birth_date,
             identification_number=self.user_data.identification_number,
             phone_number=self.user_data.phone_number,
-            id=str(uuid.uuid4()),
+            id=self.user_data.identification_number,
         )
-        already_exists = self.user_repository.user_exists_by_email(user.email)
+        already_exists = self.user_repository.user_exists_by_email(
+            user.email
+        ) or self.user_repository.user_exists(user.id)
         if already_exists:
             raise UserAlreadyExistsError
         user = self.user_repository.add_user(user)

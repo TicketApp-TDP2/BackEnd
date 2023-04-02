@@ -24,14 +24,14 @@ class CreateOrganizerCommand:
             first_name=self.organizer_data.first_name,
             last_name=self.organizer_data.last_name,
             email=self.organizer_data.email,
-            birth_date=self.organizer_data.birth_date,
-            identification_number=self.organizer_data.identification_number,
-            phone_number=self.organizer_data.phone_number,
-            id=str(uuid.uuid4()),
+            profession=self.organizer_data.profession,
+            about_me=self.organizer_data.about_me,
+            profile_picture=self.organizer_data.profile_picture,
+            id=self.organizer_data.id,
         )
         already_exists = self.organizer_repository.organizer_exists_by_email(
             organizer.email
-        )
+        ) or self.organizer_repository.organizer_exists(organizer.id)
         if already_exists:
             raise OrganizerAlreadyExistsError
         organizer = self.organizer_repository.add_organizer(organizer)
