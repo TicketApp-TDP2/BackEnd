@@ -6,7 +6,7 @@ logger = setup_logger(name=__name__)
 router = APIRouter()
 
 
-@router.get('/ping', status_code=status.HTTP_200_OK)
+@router.get('/ping', status_code=status.HTTP_200_OK, tags=["Utils"])
 async def ping():
     logger.info("Ping endpoint")
     return "pong"

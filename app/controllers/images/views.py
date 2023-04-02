@@ -13,7 +13,7 @@ logger = setup_logger(name=__name__)
 router = APIRouter()
 
 
-@router.post("/images/")
+@router.post("/images/", tags=["Images"])
 async def upload_images(
     files: List[UploadFile],
     content_length: int = Header(),
@@ -33,7 +33,7 @@ async def upload_images(
     return list(map(lambda img: ImageSchema.from_model(img), images))
 
 
-@router.get("/images/{name}")
+@router.get("/images/{name}", tags=["Images"])
 async def get_image(name: str):
 
     try:

@@ -13,7 +13,7 @@ router = APIRouter()
 
 
 @router.post(
-    '/organizers', status_code=status.HTTP_201_CREATED, response_model=OrganizerSchema
+    '/organizers', status_code=status.HTTP_201_CREATED, response_model=OrganizerSchema, tags=["Organizers"]
 )
 async def create_organizer(organizer_body: OrganizerCreateSchema):
     try:
@@ -30,7 +30,7 @@ async def create_organizer(organizer_body: OrganizerCreateSchema):
 
 
 @router.get(
-    '/organizers/{id}', status_code=status.HTTP_200_OK, response_model=OrganizerSchema
+    '/organizers/{id}', status_code=status.HTTP_200_OK, response_model=OrganizerSchema, tags=["Organizers"]
 )
 async def get_organizer(id: str):
     try:

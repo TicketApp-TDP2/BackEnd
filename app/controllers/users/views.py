@@ -12,7 +12,7 @@ logger = setup_logger(name=__name__)
 router = APIRouter()
 
 
-@router.post('/users', status_code=status.HTTP_201_CREATED, response_model=UserSchema)
+@router.post('/users', status_code=status.HTTP_201_CREATED, response_model=UserSchema, tags=["Users"])
 async def create_user(user_body: UserCreateSchema):
     try:
         repository = PersistentUserRepository()
@@ -27,7 +27,7 @@ async def create_user(user_body: UserCreateSchema):
     return user
 
 
-@router.get('/users/{id}', status_code=status.HTTP_200_OK, response_model=UserSchema)
+@router.get('/users/{id}', status_code=status.HTTP_200_OK, response_model=UserSchema, tags=["Users"])
 async def get_user(id: str):
     try:
         repository = PersistentUserRepository()
