@@ -1,7 +1,7 @@
 from __future__ import annotations
 from pydantic import BaseModel, Field, EmailStr
 from app.models.organizer import Organizer
-from typing import List
+from typing import List, Optional
 
 
 class OrganizerSchemaBase(BaseModel):
@@ -16,6 +16,14 @@ class OrganizerSchemaBase(BaseModel):
 
 class OrganizerCreateSchema(OrganizerSchemaBase):
     pass
+
+
+class OrganizerUpdateSchema(BaseModel):
+    first_name: Optional[str] = Field(..., min_length=3)
+    last_name: Optional[str] = Field(..., min_length=3)
+    profession: Optional[str] = Field(..., min_length=3)
+    about_me: Optional[str] = Field(..., min_length=3)
+    profile_picture: Optional[str] = Field(..., min_length=3)
 
 
 class OrganizerSchema(OrganizerSchemaBase):

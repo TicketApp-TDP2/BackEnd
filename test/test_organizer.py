@@ -96,3 +96,23 @@ def test_organizer_create_and_retrieve_successfully():
     data = response.json()
     body["id"] = id
     assert body == data
+
+
+def test_organizer_update():
+    body = create_organizer_body()
+    id = client.post(URI, json=body).json()["id"]
+    new_body = {
+        "first_name": "new_first_name",
+        "last_name": "new_last_name",
+        "profession": "new_profession",
+        "about_me": "new_about_me",
+        "profile_picture": "new_profile_picture",
+    }
+    response = client.put(URI + f"/{id}", json=new_body)
+    assert response.status_code == 201
+    data = response.json()
+    assert data["first_name"] == new_body["first_name"]
+    assert data["last_name"] == new_body["last_name"]
+    assert data["profession"] == new_body["profession"]
+    assert data["about_me"] == new_body["about_me"]
+    assert data["profile_picture"] == new_body["profile_picture"]
