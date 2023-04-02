@@ -19,5 +19,5 @@ class SearchEventsParser:
             organizer=search.organizer,
             type=search.type,
             limit=search.limit,
-            title=search.title,
+            name=search.name,
         )

@@ -30,7 +30,7 @@ class CreateEventCommand:
             lng=self.event_data.location.lng,
         )
         event = Event.new(
-            title=self.event_data.title,
+            name=self.event_data.name,
             description=self.event_data.description,
             location=location,
             type=self.event_data.type,
