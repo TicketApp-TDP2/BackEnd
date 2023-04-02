@@ -5,6 +5,7 @@ from app.controllers.users import router as users_router
 from app.controllers.organizers import router as organizers_router
 from app.controllers.events import router as events_router
 from app.controllers.images import router as images_router
+from app.controllers.favourites import router as favourites_router
 from app.config.constants import PORT
 from app.utils.config import log_config
 
@@ -33,6 +34,7 @@ app.include_router(users_router, prefix="/api")
 app.include_router(organizers_router, prefix="/api")
 app.include_router(events_router, prefix="/api")
 app.include_router(images_router, prefix="/api")
+app.include_router(favourites_router, prefix="/api")
 
 logger.info(f"Server started on port: {PORT}")
 log_config()

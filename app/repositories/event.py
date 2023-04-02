@@ -52,6 +52,10 @@ class EventRepository(ABC):
     def search_events(self, search: Search) -> List[Event]:
         pass
 
+    @abstractmethod
+    def get_events_by_id(self, ids: List[str]) -> List[Event]:
+        pass
+
 
 class PersistentEventRepository(EventRepository):
     def __init__(self):
@@ -77,6 +81,10 @@ class PersistentEventRepository(EventRepository):
     def search_events(self, search: Search) -> List[Event]:
         serialized_search = self.__serialize_search(search)
         events = self.events.find(serialized_search).limit(search.limit)
+        return list(map(self.__deserialize_event, events))
+
+    def get_events_by_id(self, ids: List[str]) -> List[Event]:
+        events = self.events.find({'_id': {'$in': ids}})
         return list(map(self.__deserialize_event, events))
 
     def __serialize_search(self, search: Search) -> dict:
