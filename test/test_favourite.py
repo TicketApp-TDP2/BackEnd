@@ -30,7 +30,7 @@ def create_user():
 
 def create_event():
     body = {
-        'title': 'aTitle',
+        'name': 'aName',
         'description': 'aDescription',
         'location': {
             'description': 'a location description',
@@ -44,7 +44,7 @@ def create_event():
         'start_time': '16:00:00',
         'end_time': '18:00:00',
         'organizer': 'anOwner',
-        'agenda': 'str',  # TO DEFINE
+        'agenda': [('ti1', 'tf1', 'o1', 't1', 'd1'), ('ti2', 'tf2', 'o2', 't2', 'd2')],
         'vacants': 3,
         'FAQ': [('q1', 'a1'), ('q2', 'a2')],
     }
