@@ -59,6 +59,7 @@ async def get_organizer(id: str):
     '/organizers/{id}',
     status_code=status.HTTP_201_CREATED,
     response_model=OrganizerSchema,
+    tags=["Organizers"]
 )
 async def update_organizer(id: str, update_body: OrganizerUpdateSchema):
     try:
