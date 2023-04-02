@@ -1,4 +1,8 @@
-from app.schemas.organizers import OrganizerCreateSchema, OrganizerSchema
+from app.schemas.organizers import (
+    OrganizerCreateSchema,
+    OrganizerSchema,
+    OrganizerUpdateSchema,
+)
 from app.models.organizer import Organizer
 from .errors import OrganizerAlreadyExistsError, OrganizerNotFoundError
 from app.repositories.organizers import (
@@ -24,14 +28,14 @@ class CreateOrganizerCommand:
             first_name=self.organizer_data.first_name,
             last_name=self.organizer_data.last_name,
             email=self.organizer_data.email,
-            birth_date=self.organizer_data.birth_date,
-            identification_number=self.organizer_data.identification_number,
-            phone_number=self.organizer_data.phone_number,
-            id=str(uuid.uuid4()),
+            profession=self.organizer_data.profession,
+            about_me=self.organizer_data.about_me,
+            profile_picture=self.organizer_data.profile_picture,
+            id=self.organizer_data.id,
         )
         already_exists = self.organizer_repository.organizer_exists_by_email(
             organizer.email
-        )
+        ) or self.organizer_repository.organizer_exists(organizer.id)
         if already_exists:
             raise OrganizerAlreadyExistsError
         organizer = self.organizer_repository.add_organizer(organizer)
@@ -50,5 +54,32 @@ class GetOrganizerCommand:
         if not exists:
             raise OrganizerNotFoundError
         organizer = self.organizer_repository.get_organizer(self.id)
+
+        return OrganizerSchema.from_model(organizer)
+
+
+class UpdateOrganizerCommand:
+    def __init__(
+        self,
+        organizer_repository: OrganizerRepository,
+        update: OrganizerUpdateSchema,
+        id: str,
+    ):
+        self.organizer_repository = organizer_repository
+        self.update = update
+        self.id = id
+
+    def execute(self) -> OrganizerSchema:
+        organizer = self.organizer_repository.get_organizer(self.id)
+        organizer = Organizer(
+            first_name=self.update.first_name or organizer.first_name,
+            last_name=self.update.last_name or organizer.last_name,
+            email=organizer.email,
+            id=organizer.id,
+            profession=self.update.profession or organizer.profession,
+            about_me=self.update.about_me or organizer.about_me,
+            profile_picture=self.update.profile_picture,
+        )
+        organizer = self.organizer_repository.update_organizer(organizer)
 
         return OrganizerSchema.from_model(organizer)

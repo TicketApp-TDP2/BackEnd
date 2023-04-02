@@ -1,25 +1,32 @@
 from __future__ import annotations
 from pydantic import BaseModel, Field, EmailStr
 from app.models.organizer import Organizer
-from typing import List
+from typing import List, Optional
 
 
 class OrganizerSchemaBase(BaseModel):
     first_name: str = Field(..., min_length=3)
     last_name: str = Field(..., min_length=3)
     email: EmailStr
-    birth_date: str = Field(..., min_length=3)
-    identification_number: str
-    phone_number: str
+    profession: str = Field(..., min_length=3)
+    about_me: str = Field(..., min_length=3)
+    profile_picture: str = Field(..., min_length=3)
+    id: str = Field(..., min_length=1)
 
 
 class OrganizerCreateSchema(OrganizerSchemaBase):
     pass
 
 
-class OrganizerSchema(OrganizerSchemaBase):
-    id: str = Field(..., min_length=1)
+class OrganizerUpdateSchema(BaseModel):
+    first_name: Optional[str] = Field(..., min_length=3)
+    last_name: Optional[str] = Field(..., min_length=3)
+    profession: Optional[str] = Field(..., min_length=3)
+    about_me: Optional[str] = Field(..., min_length=3)
+    profile_picture: Optional[str] = Field(..., min_length=3)
 
+
+class OrganizerSchema(OrganizerSchemaBase):
     @classmethod
     def from_model(cls, organizer: Organizer) -> OrganizerSchema:
 
@@ -28,7 +35,7 @@ class OrganizerSchema(OrganizerSchemaBase):
             last_name=organizer.last_name,
             email=EmailStr(organizer.email),
             id=organizer.id if organizer.id else "",
-            birth_date=organizer.birth_date,
-            identification_number=organizer.identification_number,
-            phone_number=organizer.phone_number,
+            profession=organizer.profession,
+            about_me=organizer.about_me,
+            profile_picture=organizer.profile_picture,
         )

@@ -31,9 +31,10 @@ def create_organizer_body(fields={}):
         'first_name': 'first_name',
         'last_name': 'last_name',
         'email': 'email@mail.com',
-        'identification_number': '40400400',
-        'phone_number': '1180808080',
-        "birth_date": "1990-01-01",
+        'profession': 'profession',
+        'about_me': 'about_me',
+        'profile_picture': 'profile_picture',
+        'id': '123',
     }
 
     for k, v in fields.items():
@@ -72,7 +73,10 @@ def test_organizer_create_wrong_body():
         'first_name': [None, '', 'aa'],
         'last_name': [None, '', 'aa'],
         'email': [None, '', 'email', 'a', 'email.com'],
-        'birth_date': [None, '', 'a', 'aa'],
+        'profession': [None, '', 'aa'],
+        'about_me': [None, '', 'aa'],
+        'profile_picture': [None, '', 'aa'],
+        'id': [None, ''],
     }
 
     invalid_bodies = generate_invalid(body, invalid_variations)
@@ -92,3 +96,23 @@ def test_organizer_create_and_retrieve_successfully():
     data = response.json()
     body["id"] = id
     assert body == data
+
+
+def test_organizer_update():
+    body = create_organizer_body()
+    id = client.post(URI, json=body).json()["id"]
+    new_body = {
+        "first_name": "new_first_name",
+        "last_name": "new_last_name",
+        "profession": "new_profession",
+        "about_me": "new_about_me",
+        "profile_picture": "new_profile_picture",
+    }
+    response = client.put(URI + f"/{id}", json=new_body)
+    assert response.status_code == 201
+    data = response.json()
+    assert data["first_name"] == new_body["first_name"]
+    assert data["last_name"] == new_body["last_name"]
+    assert data["profession"] == new_body["profession"]
+    assert data["about_me"] == new_body["about_me"]
+    assert data["profile_picture"] == new_body["profile_picture"]

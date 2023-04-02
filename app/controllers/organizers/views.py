@@ -2,8 +2,16 @@ from fastapi.exceptions import HTTPException
 from app.repositories.organizers import PersistentOrganizerRepository
 from fastapi import status, APIRouter
 from app.config.logger import setup_logger
-from app.schemas.organizers import OrganizerCreateSchema, OrganizerSchema
-from app.commands.organizers import CreateOrganizerCommand, GetOrganizerCommand
+from app.schemas.organizers import (
+    OrganizerCreateSchema,
+    OrganizerSchema,
+    OrganizerUpdateSchema,
+)
+from app.commands.organizers import (
+    CreateOrganizerCommand,
+    GetOrganizerCommand,
+    UpdateOrganizerCommand,
+)
 from app.utils.error import TicketAppError
 from typing import List
 
@@ -45,3 +53,22 @@ async def get_organizer(id: str):
         )
 
     return organizer
+
+
+@router.put(
+    '/organizers/{id}',
+    status_code=status.HTTP_201_CREATED,
+    response_model=OrganizerSchema,
+)
+async def update_organizer(id: str, update_body: OrganizerUpdateSchema):
+    try:
+        repository = PersistentOrganizerRepository()
+        user = UpdateOrganizerCommand(repository, update_body, id).execute()
+    except TicketAppError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Error"
+        )
+    return user
