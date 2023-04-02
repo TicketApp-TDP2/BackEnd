@@ -12,7 +12,7 @@ class SearchEvent(BaseModel):
     organizer: Optional[str]
     type: Optional[Type]
     limit: int = Field(default=5)
-    title: Optional[str]
+    name: Optional[str]
 
 
 class LocationSchema(BaseModel):
@@ -22,7 +22,7 @@ class LocationSchema(BaseModel):
 
 
 class EventSchemaBase(BaseModel):
-    title: str = Field(..., min_length=3)
+    name: str = Field(..., min_length=3)
     description: str = Field(..., min_length=3)
     location: LocationSchema
     type: Type
@@ -32,7 +32,7 @@ class EventSchemaBase(BaseModel):
     start_time: time
     end_time: time
     organizer: str = Field(..., min_length=3)
-    agenda: str = Field(..., min_length=3)  # TO DEFINE
+    agenda: List[Tuple[str, str, str, str, str]]
     vacants: int = Field(..., ge=1)
     FAQ: List[Tuple[str, str]]
 
@@ -53,7 +53,7 @@ class EventSchema(EventSchemaBase):
         )
 
         return EventSchema(
-            title=event.title,
+            name=event.name,
             description=event.description,
             location=location,
             type=Type(event.type),

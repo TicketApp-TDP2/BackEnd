@@ -26,13 +26,13 @@ class Search:
         type: Optional[Type],
         location: Optional[SearchLocation],
         limit: int,
-        title: str,
+        name: str,
     ):
         self.organizer = organizer
         self.type = type
         self.location = location
         self.limit = limit
-        self.title = title
+        self.name = name
 
 
 class EventRepository(ABC):
@@ -85,8 +85,8 @@ class PersistentEventRepository(EventRepository):
             'type': search.type and search.type.value,
         }
 
-        if search.title:
-            srch['title'] = {'$regex': search.title, '$options': 'i'}
+        if search.name:
+            srch['name'] = {'$regex': search.name, '$options': 'i'}
 
         if search.location:
             lng = search.location.lng
@@ -104,7 +104,7 @@ class PersistentEventRepository(EventRepository):
     def __serialize_event(self, event: Event) -> dict:
 
         serialized = {
-            'title': event.title,
+            'name': event.name,
             'description': event.description,
             'location': {
                 'description': event.location.description,
@@ -130,7 +130,7 @@ class PersistentEventRepository(EventRepository):
 
         return Event(
             id=data['_id'],
-            title=data['title'],
+            name=data['name'],
             description=data['description'],
             location=Location(
                 description=data['location']['description'],

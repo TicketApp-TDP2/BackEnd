@@ -19,7 +19,7 @@ class Type(Enum):
 class Event:
     def __init__(
         self,
-        title: str,
+        name: str,
         description: str,
         location: Location,
         type: Type,
@@ -29,12 +29,12 @@ class Event:
         start_time: time,
         end_time: time,
         organizer: str,
-        agenda: str,  # TO DEFINE
+        agenda: list[tuple[str, str, str, str, str]],
         vacants: int,
         FAQ: list[tuple[str, str]],
         id: str,
     ):
-        self.title = title
+        self.name = name
         self.description = description
         self.location = location
         self.type = type
@@ -52,7 +52,7 @@ class Event:
     @classmethod
     def new(
         cls,
-        title: str,
+        name: str,
         description: str,
         location: Location,
         type: Type,
@@ -62,14 +62,14 @@ class Event:
         start_time: time,
         end_time: time,
         organizer: str,
-        agenda: str,  # TO DEFINE
+        agenda: list[tuple[str, str, str, str, str]],
         vacants: int,
         FAQ: list[tuple[str, str]],
     ) -> Event:
 
         return Event(
             id=str(uuid.uuid4()),
-            title=title,
+            name=name,
             description=description,
             location=location,
             type=type,
