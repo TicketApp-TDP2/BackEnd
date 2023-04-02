@@ -2,6 +2,7 @@ from app.repositories.config import db
 from abc import ABC, abstractmethod
 from app.models.user import User
 from app.repositories.errors import UserNotFoundError
+from app.models.favourite import Favourite
 
 
 class UserRepository(ABC):
@@ -27,6 +28,10 @@ class UserRepository(ABC):
 
     @abstractmethod
     def update_user(self, user: User) -> User:
+        pass
+
+    @abstractmethod
+    def add_favourite(self, favourite: Favourite) -> Favourite:
         pass
 
 
@@ -65,6 +70,13 @@ class PersistentUserRepository(UserRepository):
         self.users.update_one({'_id': user.id}, {'$set': data})
         return user
 
+    def add_favourite(self, favourite: Favourite) -> Favourite:
+        user_id = favourite.user_id
+        event_id = favourite.event_id
+        self.users.update_one({'_id': user_id}, {'$addToSet': {'favourites': event_id}})
+
+        return favourite
+
     def __serialize_user(self, user: User) -> dict:
         serialized = {
             '_id': user.id,
@@ -74,6 +86,7 @@ class PersistentUserRepository(UserRepository):
             'birth_date': user.birth_date,
             'identification_number': user.identification_number,
             'phone_number': user.phone_number,
+            'favourites': user.favourites,
         }
 
         return serialized
@@ -87,4 +100,5 @@ class PersistentUserRepository(UserRepository):
             birth_date=data['birth_date'],
             identification_number=data['identification_number'],
             phone_number=data['phone_number'],
+            favourites=data['favourites'],
         )
