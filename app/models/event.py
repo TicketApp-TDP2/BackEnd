@@ -12,8 +12,25 @@ class Location:
 
 
 class Type(Enum):
-    ToDefine = "aTypeToBeDefined"
-    AnotherToDefine = "anotherTypeToBeDefined"
+    Arte_y_Cultura = "Arte y Cultura"
+    Musica = "Música"
+    Danza = "Danza"
+    Moda = "Moda"
+    Bellas_Artes = "Bellas Artes"
+    Cine = "Cine"
+    Turismo = "Turismo"
+    Deporte = "Deporte"
+    Gastronomia = "Gastronomía"
+    Educacion = "Educación"
+    Empresa = "Empresa"
+    Capacitacion = "Capacitación"
+    Entretenimiento = "Entretenimiento"
+    Tecnologia = "Tecnología"
+    Infantil = "Infantil"
+    Debate = "Debate"
+    Conmemoracion = "Conmemoración"
+    Religion = "Religión"
+    Convencion = "Convención"
 
 
 class Event:

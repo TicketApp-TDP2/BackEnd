@@ -37,7 +37,7 @@ def create_event():
             'lat': 23.4,
             'lng': 32.23,
         },
-        'type': 'aTypeToBeDefined',
+        'type': 'Danza',
         'images': ['image1', 'image2', 'image3'],
         'preview_image': 'preview_image',
         'date': '2023-03-29',

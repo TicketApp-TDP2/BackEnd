@@ -19,7 +19,7 @@ def create_event(fields={}):
             'lat': 23.4,
             'lng': 32.23,
         },
-        'type': 'aTypeToBeDefined',
+        'type': 'Danza',
         'images': ['image1', 'image2', 'image3'],
         'preview_image': 'preview_image',
         'date': '2023-03-29',
@@ -65,7 +65,7 @@ def test_event_create_with_wrong_body():
             'lat': 23.4,
             'lng': 32.23,
         },
-        'type': 'aTypeToBeDefined',  # CHECK REAL TYPES
+        'type': 'Danza',  # CHECK REAL TYPES
         'images': ['image1', 'image2', 'image3'],
         'preview_image': 'preview_image',
         'date': '2023-03-29',
@@ -101,7 +101,10 @@ def test_event_create_with_wrong_body():
         'organizer': [None, ''],
         'start_time': [None, '', 'a', '25:00:00'],
         'end_time': [None, '', 'a', '25:00:00'],
-        'agenda': [None, [('ti1', 'o1', 't1', 'd1'), ('ti2', 'tf2', 'o2', 't2')],],
+        'agenda': [
+            None,
+            [('ti1', 'o1', 't1', 'd1'), ('ti2', 'tf2', 'o2', 't2')],
+        ],
         'vacants': [None, '', 'a', 0],
         'FAQ': [None, '', 'a', [('a')], [('a', 'b', 'c')], [('a', 'b'), ('c')]],
     }
@@ -142,11 +145,11 @@ def test_get_event_exists():
 
 
 def test_search_event_by_type():
-    event1 = create_event({"name": "event 1", "type": "aTypeToBeDefined"})
-    event2 = create_event({"name": "event 2", "type": "anotherTypeToBeDefined"})
-    event3 = create_event({"name": "event 3", "type": "aTypeToBeDefined"})
+    event1 = create_event({"name": "event 1", "type": "Danza"})
+    event2 = create_event({"name": "event 2", "type": "Moda"})
+    event3 = create_event({"name": "event 3", "type": "Danza"})
 
-    response = client.get(f"{URI}?type=aTypeToBeDefined")
+    response = client.get(f"{URI}?type=Danza")
     data = response.json()
 
     data_names = map(lambda e: e['name'], data)
@@ -209,18 +212,10 @@ def test_search_event_by_location():
 
 
 def test_search_event_without_filters_returns_everything():
-    event1 = create_event(
-        {"name": "event 1", "organizer": "omar", "type": "aTypeToBeDefined"}
-    )
-    event2 = create_event(
-        {"name": "event 2", "organizer": "juan", "type": "aTypeToBeDefined"}
-    )
-    event3 = create_event(
-        {"name": "event 3", "organizer": "Food", "type": "anotherTypeToBeDefined"}
-    )
-    event4 = create_event(
-        {"name": "event 4", "organizer": "omar", "type": "anotherTypeToBeDefined"}
-    )
+    event1 = create_event({"name": "event 1", "organizer": "omar", "type": "Danza"})
+    event2 = create_event({"name": "event 2", "organizer": "juan", "type": "Danza"})
+    event3 = create_event({"name": "event 3", "organizer": "Food", "type": "Moda"})
+    event4 = create_event({"name": "event 4", "organizer": "omar", "type": "Moda"})
 
     response = client.get(f"{URI}")
     data = response.json()
@@ -228,26 +223,16 @@ def test_search_event_without_filters_returns_everything():
     data_names = map(lambda e: e['name'], data)
 
     assert len(data) == 4
-    assert all(
-        map(lambda e: e['name'] in data_names, [event1, event2, event3, event4])
-    )
+    assert all(map(lambda e: e['name'] in data_names, [event1, event2, event3, event4]))
 
 
 def test_search_event_with_multiple_filters():
-    event1 = create_event(
-        {"name": "event 1", "organizer": "omar", "type": "anotherTypeToBeDefined"}
-    )
-    event2 = create_event(
-        {"name": "event 2", "organizer": "juan", "type": "anotherTypeToBeDefined"}
-    )
-    event3 = create_event(
-        {"name": "event 3", "organizer": "Food", "type": "aTypeToBeDefined"}
-    )
-    event4 = create_event(
-        {"name": "event 4", "organizer": "omar", "type": "aTypeToBeDefined"}
-    )
+    event1 = create_event({"name": "event 1", "organizer": "omar", "type": "Moda"})
+    event2 = create_event({"name": "event 2", "organizer": "juan", "type": "Moda"})
+    event3 = create_event({"name": "event 3", "organizer": "Food", "type": "Danza"})
+    event4 = create_event({"name": "event 4", "organizer": "omar", "type": "Danza"})
 
-    response = client.get(f"{URI}?type=anotherTypeToBeDefined&organizer=omar")
+    response = client.get(f"{URI}?type=Moda&organizer=omar")
     data = response.json()
 
     data_names = map(lambda e: e['name'], data)
@@ -258,14 +243,10 @@ def test_search_event_with_multiple_filters():
 
 
 def test_search_event_with_limit_returns_given_amount():
-    create_event(
-        {"name": "event 1", "organizer": "omar", "type": "anotherTypeToBeDefined"}
-    )
-    create_event(
-        {"name": "event 2", "organizer": "juan", "type": "anotherTypeToBeDefined"}
-    )
-    create_event({"name": "event 3", "organizer": "Food", "type": "aTypeToBeDefined"})
-    create_event({"name": "event 4", "organizer": "omar", "type": "aTypeToBeDefined"})
+    create_event({"name": "event 1", "organizer": "omar", "type": "Moda"})
+    create_event({"name": "event 2", "organizer": "juan", "type": "Moda"})
+    create_event({"name": "event 3", "organizer": "Food", "type": "Danza"})
+    create_event({"name": "event 4", "organizer": "omar", "type": "Danza"})
 
     response = client.get(f"{URI}?limit=3")
     data = response.json()
