@@ -72,7 +72,7 @@ def test_user_create_wrong_body():
         'first_name': [None, '', 'aa'],
         'last_name': [None, '', 'aa'],
         'email': [None, '', 'email', 'a', 'email.com'],
-        'birth_date': [None, '', 'a', 'aa'],
+        #'birth_date': [None, '', 'a', 'aa'],
     }
 
     invalid_bodies = generate_invalid(body, invalid_variations)

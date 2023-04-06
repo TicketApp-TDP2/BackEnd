@@ -24,6 +24,7 @@ router = APIRouter()
     '/users/{user_id}/favourites',
     status_code=status.HTTP_201_CREATED,
     response_model=FavouriteSchema,
+    tags=["Users"]
 )
 async def add_favourite(user_id: str, favourite_body: FavouriteSchema):
     try:
@@ -46,6 +47,7 @@ async def add_favourite(user_id: str, favourite_body: FavouriteSchema):
 @router.delete(
     '/users/{user_id}/favourites/{event_id}',
     status_code=status.HTTP_200_OK,
+    tags=["Users"]
 )
 async def delete_favourite(user_id: str, event_id: str):
     try:
@@ -65,6 +67,7 @@ async def delete_favourite(user_id: str, event_id: str):
     '/users/{user_id}/favourites',
     status_code=status.HTTP_200_OK,
     response_model=List[EventSchema],
+    tags=["Users"]
 )
 async def get_favourites(user_id: str):
     try:

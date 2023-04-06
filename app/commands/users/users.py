@@ -1,3 +1,4 @@
+from typing import Optional
 from app.schemas.users import UserCreateSchema, UserSchema
 from app.models.user import User
 from .errors import UserAlreadyExistsError, UserNotFoundError
