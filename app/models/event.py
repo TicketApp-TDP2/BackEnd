@@ -10,6 +10,19 @@ class Location:
         self.lat = lat
         self.lng = lng
 
+class Agenda:
+    def __init__(self, time_init: str, time_end: str, owner: str, title: str, description: str):
+        self.time_init = time_init
+        self.time_end = time_end
+        self.owner = owner
+        self.title = title
+        self.description = description
+
+
+class Faq:
+    def __init__(self, question: str, answer: str):
+        self.question = question
+        self.answer = answer 
 
 class Type(Enum):
     Arte_y_Cultura = "Arte y Cultura"
@@ -46,9 +59,9 @@ class Event:
         start_time: time,
         end_time: time,
         organizer: str,
-        agenda: list[tuple[str, str, str, str, str]],
+        agenda: list[Agenda],
         vacants: int,
-        FAQ: list[tuple[str, str]],
+        FAQ: list[Faq],
         id: str,
     ):
         self.name = name
@@ -79,9 +92,9 @@ class Event:
         start_time: time,
         end_time: time,
         organizer: str,
-        agenda: list[tuple[str, str, str, str, str]],
+        agenda: list[Agenda],
         vacants: int,
-        FAQ: list[tuple[str, str]],
+        FAQ: list[Faq],
     ) -> Event:
 
         return Event(

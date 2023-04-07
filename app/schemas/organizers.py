@@ -1,6 +1,7 @@
 from __future__ import annotations
 from pydantic import BaseModel, Field, EmailStr
 from app.models.organizer import Organizer
+
 from typing import List, Optional
 
 

@@ -26,9 +26,20 @@ def create_event(fields={}):
         'start_time': '16:00:00',
         'end_time': '18:00:00',
         'organizer': 'anOwner',
-        'agenda': [('ti1', 'tf1', 'o1', 't1', 'd1'), ('ti2', 'tf2', 'o2', 't2', 'd2')],
+        'agenda': {
+            'time_init': '09:00',
+            'time_end': '12:00',
+            'owner': 'Pepe Cibrian',
+            'title': 'Noche de teatro en Bs As',
+            'description': 'Una noche de teatro unica',
+        },        
         'vacants': 3,
-        'FAQ': [('q1', 'a1'), ('q2', 'a2')],
+        'FAQ': {
+            'question': 'se pueden llevar alimentos?',
+            'answer': 'No. No se permiten alimentos ni bebidas en el lugar',
+        },
+        
+        #[('q1', 'a1'), ('q2', 'a2')],
     }
 
     for k, v in fields.items():
@@ -72,9 +83,18 @@ def test_event_create_with_wrong_body():
         'start_time': '16:00:00',
         'end_time': '18:00:00',
         'organizer': 'anOwner',
-        'agenda': [('ti1', 'tf1', 'o1', 't1', 'd1'), ('ti2', 'tf2', 'o2', 't2', 'd2')],
+        'agenda': {
+            'time_init': '09:00',
+            'time_end': '12:00',
+            'owner': 'Pepe Cibrian',
+            'title': 'Noche de teatro en Bs As',
+            'description': 'Una noche de teatro unica',
+        },
         'vacants': 3,
-        'FAQ': [('q1', 'a1'), ('q2', 'a2')],
+        'FAQ': {
+            'question': 'se pueden llevar alimentos?',
+            'answer': 'No. No se permiten alimentos ni bebidas en el lugar',
+        },
     }
 
     invalid_variations = {
@@ -101,12 +121,16 @@ def test_event_create_with_wrong_body():
         'organizer': [None, ''],
         'start_time': [None, '', 'a', '25:00:00'],
         'end_time': [None, '', 'a', '25:00:00'],
-        'agenda': [
-            None,
-            [('ti1', 'o1', 't1', 'd1'), ('ti2', 'tf2', 'o2', 't2')],
-        ],
+        'agenda': {
+            'time_init': '09:00',
+            'time_end': '12:00',
+            'owner': 'Pepe Cibrian',
+            'title': 'Noche de teatro en Bs As',
+        },
         'vacants': [None, '', 'a', 0],
-        'FAQ': [None, '', 'a', [('a')], [('a', 'b', 'c')], [('a', 'b'), ('c')]],
+        'FAQ': {
+            'question': 'se pueden llevar alimentos?',
+        },
     }
 
     invalid_bodies = generate_invalid(body, invalid_variations)
