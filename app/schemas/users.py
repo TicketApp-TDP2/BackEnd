@@ -11,7 +11,7 @@ class UserSchemaBase(BaseModel):
     birth_date: Optional[str]
     identification_number: Optional[str]
     phone_number: Optional[str]
-    id: str = Field(..., min_length=1)
+    id: str = Field(..., min_length=3)
 
 
 class UserCreateSchema(UserSchemaBase):
@@ -28,7 +28,7 @@ class UserSchema(UserSchemaBase):
             first_name=user.first_name,
             last_name=user.last_name,
             email=EmailStr(user.email),
-            id=user.id if user.id else "",
+            id=user.id,
             birth_date=user.birth_date if user.birth_date else "1900-01-01",
             identification_number= user.identification_number if user.identification_number else "",
             phone_number=user.phone_number if user.phone_number else "",

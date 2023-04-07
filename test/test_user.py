@@ -34,6 +34,7 @@ def create_user_body(fields={}):
         'identification_number': '40400400',
         'phone_number': '1180808080',
         "birth_date": "1990-01-01",
+        "id":"784578"
     }
 
     for k, v in fields.items():
