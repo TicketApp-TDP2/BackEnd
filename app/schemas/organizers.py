@@ -1,6 +1,7 @@
 from __future__ import annotations
 from pydantic import BaseModel, Field, EmailStr
 from app.models.organizer import Organizer
+
 from typing import List, Optional
 
 
@@ -8,10 +9,10 @@ class OrganizerSchemaBase(BaseModel):
     first_name: str = Field(..., min_length=3)
     last_name: str = Field(..., min_length=3)
     email: EmailStr
-    profession: str = Field(..., min_length=3)
-    about_me: str = Field(..., min_length=3)
+    profession: Optional[str]    
+    about_me: Optional[str]
     profile_picture: str = Field(..., min_length=3)
-    id: str = Field(..., min_length=1)
+    id: str = Field(..., min_length=3)
 
 
 class OrganizerCreateSchema(OrganizerSchemaBase):
@@ -21,8 +22,8 @@ class OrganizerCreateSchema(OrganizerSchemaBase):
 class OrganizerUpdateSchema(BaseModel):
     first_name: Optional[str] = Field(..., min_length=3)
     last_name: Optional[str] = Field(..., min_length=3)
-    profession: Optional[str] = Field(..., min_length=3)
-    about_me: Optional[str] = Field(..., min_length=3)
+    profession: Optional[str]    
+    about_me: Optional[str]
     profile_picture: Optional[str] = Field(..., min_length=3)
 
 
@@ -34,8 +35,8 @@ class OrganizerSchema(OrganizerSchemaBase):
             first_name=organizer.first_name,
             last_name=organizer.last_name,
             email=EmailStr(organizer.email),
-            id=organizer.id if organizer.id else "",
-            profession=organizer.profession,
-            about_me=organizer.about_me,
+            id=organizer.id,
+            profession=organizer.profession if organizer.profession else "",
+            about_me=organizer.about_me if organizer.about_me else "",
             profile_picture=organizer.profile_picture,
         )

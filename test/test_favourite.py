@@ -44,9 +44,22 @@ def create_event():
         'start_time': '16:00:00',
         'end_time': '18:00:00',
         'organizer': 'anOwner',
-        'agenda': [('ti1', 'tf1', 'o1', 't1', 'd1'), ('ti2', 'tf2', 'o2', 't2', 'd2')],
+        'agenda': [
+            {
+                'time_init': '09:00',
+                'time_end': '12:00',
+                'owner': 'Pepe Cibrian',
+                'title': 'Noche de teatro en Bs As',
+                'description': 'Una noche de teatro unica',
+            }
+        ],
         'vacants': 3,
-        'FAQ': [('q1', 'a1'), ('q2', 'a2')],
+        'FAQ': [
+            {
+                'question': 'se pueden llevar alimentos?',
+                'answer': 'No. No se permiten alimentos ni bebidas en el lugar',
+            }
+        ],
     }
 
     response = client.post("api/events", json=body)

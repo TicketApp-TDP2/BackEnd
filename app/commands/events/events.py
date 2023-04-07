@@ -1,5 +1,5 @@
 from typing import List
-from app.models.event import Event, Location
+from app.models.event import Agenda, Event, Faq, Location
 from app.schemas.event import (
     EventCreateSchema,
     EventSchema,
@@ -29,6 +29,25 @@ class CreateEventCommand:
             lat=self.event_data.location.lat,
             lng=self.event_data.location.lng,
         )
+        agenda = [
+            Agenda(
+                time_init=element.time_init,
+                time_end=element.time_end,
+                owner=element.owner,
+                title=element.title,
+                description=element.description,
+            )
+            for element in self.event_data.agenda
+        ]
+
+        faq = [
+            Faq(
+                question=element.question,
+                answer=element.answer,
+            )
+            for element in self.event_data.FAQ
+        ]
+
         event = Event.new(
             name=self.event_data.name,
             description=self.event_data.description,
@@ -40,9 +59,9 @@ class CreateEventCommand:
             organizer=self.event_data.organizer,
             start_time=self.event_data.start_time,
             end_time=self.event_data.end_time,
-            agenda=self.event_data.agenda,
+            agenda=agenda,
             vacants=self.event_data.vacants,
-            FAQ=self.event_data.FAQ,
+            FAQ=faq,
         )
         already_exists = self.event_repository.event_exists(event.id)
         if already_exists:

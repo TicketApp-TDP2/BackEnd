@@ -21,6 +21,19 @@ class LocationSchema(BaseModel):
     lng: float
 
 
+class FaqSchema(BaseModel):
+    question: str = Field(..., min_length=3)
+    answer: str = Field(..., min_length=3)
+
+
+class AgendaSchema(BaseModel):
+    time_init: str = Field(..., min_length=3)
+    time_end: str = Field(..., min_length=3)
+    owner: str = Field(..., min_length=3)
+    title: str = Field(..., min_length=3)
+    description: str = Field(..., min_length=3)
+
+
 class EventSchemaBase(BaseModel):
     name: str = Field(..., min_length=3)
     description: str = Field(..., min_length=3)
@@ -32,9 +45,9 @@ class EventSchemaBase(BaseModel):
     start_time: time
     end_time: time
     organizer: str = Field(..., min_length=3)
-    agenda: List[Tuple[str, str, str, str, str]]
+    agenda: List[AgendaSchema]
     vacants: int = Field(..., ge=1)
-    FAQ: List[Tuple[str, str]]
+    FAQ: List[FaqSchema]
 
 
 class EventCreateSchema(EventSchemaBase):
@@ -51,6 +64,24 @@ class EventSchema(EventSchemaBase):
             lat=event.location.lat,
             lng=event.location.lng,
         )
+        agenda = [
+            AgendaSchema(
+                time_init=element.time_init,
+                time_end=element.time_end,
+                owner=element.owner,
+                title=element.title,
+                description=element.description,
+            )
+            for element in event.agenda
+        ]
+
+        faq = [
+            FaqSchema(
+                question=element.question,
+                answer=element.answer,
+            )
+            for element in event.FAQ
+        ]
 
         return EventSchema(
             name=event.name,
@@ -63,8 +94,8 @@ class EventSchema(EventSchemaBase):
             start_time=event.start_time,
             end_time=event.end_time,
             organizer=event.organizer,
-            agenda=event.agenda,
+            agenda=agenda,
             vacants=event.vacants,
-            FAQ=event.FAQ,
+            FAQ=faq,
             id=event.id,
         )

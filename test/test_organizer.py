@@ -73,8 +73,6 @@ def test_organizer_create_wrong_body():
         'first_name': [None, '', 'aa'],
         'last_name': [None, '', 'aa'],
         'email': [None, '', 'email', 'a', 'email.com'],
-        'profession': [None, '', 'aa'],
-        'about_me': [None, '', 'aa'],
         'profile_picture': [None, '', 'aa'],
         'id': [None, ''],
     }
