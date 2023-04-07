@@ -29,17 +29,24 @@ class CreateEventCommand:
             lat=self.event_data.location.lat,
             lng=self.event_data.location.lng,
         )
-        agenda = Agenda(
-            time_init=self.event_data.agenda.time_init,
-            time_end=self.event_data.agenda.time_end,
-            owner=self.event_data.agenda.owner,
-            title=self.event_data.agenda.title,
-            description=self.event_data.agenda.description,
-        )
-        faq = Faq(
-            question=self.event_data.faq.question,
-            answer=self.event_data.faq.answer,
-        )
+        agenda = [
+            Agenda(
+                time_init=element.time_init,
+                time_end=element.time_end,
+                owner=element.owner,
+                title=element.title,
+                description=element.description,
+            )
+            for element in self.event_data.agenda
+        ]
+
+        faq = [
+            Faq(
+                question=element.question,
+                answer=element.answer,
+            )
+            for element in self.event_data.FAQ
+        ]
 
         event = Event.new(
             name=self.event_data.name,

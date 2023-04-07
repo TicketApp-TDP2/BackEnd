@@ -26,20 +26,23 @@ def create_event(fields={}):
         'start_time': '16:00:00',
         'end_time': '18:00:00',
         'organizer': 'anOwner',
-        'agenda': {
-            'time_init': '09:00',
-            'time_end': '12:00',
-            'owner': 'Pepe Cibrian',
-            'title': 'Noche de teatro en Bs As',
-            'description': 'Una noche de teatro unica',
-        },        
+        'agenda': [
+            {
+                'time_init': '09:00',
+                'time_end': '12:00',
+                'owner': 'Pepe Cibrian',
+                'title': 'Noche de teatro en Bs As',
+                'description': 'Una noche de teatro unica',
+            }
+        ],
         'vacants': 3,
-        'FAQ': {
-            'question': 'se pueden llevar alimentos?',
-            'answer': 'No. No se permiten alimentos ni bebidas en el lugar',
-        },
-        
-        #[('q1', 'a1'), ('q2', 'a2')],
+        'FAQ': [
+            {
+                'question': 'se pueden llevar alimentos?',
+                'answer': 'No. No se permiten alimentos ni bebidas en el lugar',
+            }
+        ],
+        # [('q1', 'a1'), ('q2', 'a2')],
     }
 
     for k, v in fields.items():
@@ -76,25 +79,29 @@ def test_event_create_with_wrong_body():
             'lat': 23.4,
             'lng': 32.23,
         },
-        'type': 'Danza',  # CHECK REAL TYPES
+        'type': 'Danza',
         'images': ['image1', 'image2', 'image3'],
         'preview_image': 'preview_image',
         'date': '2023-03-29',
         'start_time': '16:00:00',
         'end_time': '18:00:00',
         'organizer': 'anOwner',
-        'agenda': {
-            'time_init': '09:00',
-            'time_end': '12:00',
-            'owner': 'Pepe Cibrian',
-            'title': 'Noche de teatro en Bs As',
-            'description': 'Una noche de teatro unica',
-        },
+        'agenda': [
+            {
+                'time_init': '09:00',
+                'time_end': '12:00',
+                'owner': 'Pepe Cibrian',
+                'title': 'Noche de teatro en Bs As',
+                'description': 'Una noche de teatro unica',
+            }
+        ],
         'vacants': 3,
-        'FAQ': {
-            'question': 'se pueden llevar alimentos?',
-            'answer': 'No. No se permiten alimentos ni bebidas en el lugar',
-        },
+        'FAQ': [
+            {
+                'question': 'se pueden llevar alimentos?',
+                'answer': 'No. No se permiten alimentos ni bebidas en el lugar',
+            }
+        ],
     }
 
     invalid_variations = {
@@ -121,16 +128,45 @@ def test_event_create_with_wrong_body():
         'organizer': [None, ''],
         'start_time': [None, '', 'a', '25:00:00'],
         'end_time': [None, '', 'a', '25:00:00'],
-        'agenda': {
-            'time_init': '09:00',
-            'time_end': '12:00',
-            'owner': 'Pepe Cibrian',
-            'title': 'Noche de teatro en Bs As',
-        },
+        'agenda': [
+            None,
+            [
+                {
+                    'time_init': '09:00',
+                    'time_end': '12:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                }
+            ],
+            [
+                {
+                    'time_init': '09:00',
+                    'time_end': '12:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                },
+                {
+                    'time_init': '09:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                },
+            ],
+        ],
         'vacants': [None, '', 'a', 0],
-        'FAQ': {
-            'question': 'se pueden llevar alimentos?',
-        },
+        'FAQ': [
+            None,
+            [
+                {
+                    'question': 'se pueden llevar alimentos?',
+                }
+            ],
+            [
+                {'question': 'se pueden llevar alimentos?', 'answer': 'Si se puede'},
+                {'question': 'Otra pregunta'},
+            ],
+        ],
     }
 
     invalid_bodies = generate_invalid(body, invalid_variations)
@@ -291,3 +327,61 @@ def test_search_event_by_name():
     assert len(data) == 2
     assert all(map(lambda e: e['name'] in data_names, [event1, event2]))
     assert not any(map(lambda e: e['name'] in data_names, [event3]))
+
+
+def test_event_create_with_empty_agenda():
+    body = create_event({"agenda": []})
+    response = client.post(URI, json=body)
+    response_data = response.json()
+    assert response.status_code == 201
+    assert 'id' in response_data
+
+
+def test_event_create_with_empty_faq():
+    body = create_event({"FAQ": []})
+    response = client.post(URI, json=body)
+    response_data = response.json()
+    assert response.status_code == 201
+    assert 'id' in response_data
+
+
+def test_event_create_with_two_agenda():
+    body = create_event(
+        {
+            "agenda": [
+                {
+                    'time_init': '09:00',
+                    'time_end': '12:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                },
+                {
+                    'time_init': '12:00',
+                    'time_end': '14:00',
+                    'owner': 'Agustin',
+                    'title': 'Noche de teatro en Bs As 2',
+                    'description': 'Una noche de teatro unica 2',
+                },
+            ]
+        }
+    )
+    response = client.post(URI, json=body)
+    response_data = response.json()
+    assert response.status_code == 201
+    assert 'id' in response_data
+
+
+def test_event_create_with_two_faq():
+    body = create_event(
+        {
+            "FAQ": [
+                {'question': 'se pueden llevar alimentos?', 'answer': 'Si se puede'},
+                {'question': 'Otra pregunta', 'answer': 'No se puede'},
+            ]
+        }
+    )
+    response = client.post(URI, json=body)
+    response_data = response.json()
+    assert response.status_code == 201
+    assert 'id' in response_data

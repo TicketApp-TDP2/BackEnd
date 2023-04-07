@@ -4,7 +4,7 @@ from app.repositories.config import db
 from pymongo import GEOSPHERE
 from bson.son import SON
 from abc import ABC, abstractmethod
-from app.models.event import Type, Event, Location
+from app.models.event import Type, Event, Location, Agenda, Faq
 from app.repositories.errors import EventNotFoundError
 from datetime import date, time
 
@@ -109,7 +109,33 @@ class PersistentEventRepository(EventRepository):
 
         return {k: v for k, v in srch.items() if v is not None}
 
+    def __serialize_agenda(self, agenda):
+        serialized_agenda = [
+            {
+                'time_init': element.time_init,
+                'time_end': element.time_end,
+                'title': element.title,
+                'owner': element.owner,
+                'description': element.description,
+            }
+            for element in agenda
+        ]
+        return serialized_agenda
+
+    def __serialize_faq(self, faq):
+        serialized_faq = [
+            {
+                'question': element.question,
+                'answer': element.answer,
+            }
+            for element in faq
+        ]
+        return serialized_faq
+
     def __serialize_event(self, event: Event) -> dict:
+
+        serialized_agenda = self.__serialize_agenda(event.agenda)
+        serialized_faq = self.__serialize_faq(event.FAQ)
 
         serialized = {
             'name': event.name,
@@ -126,15 +152,41 @@ class PersistentEventRepository(EventRepository):
             'start_time': str(event.start_time),
             'end_time': str(event.end_time),
             'organizer': event.organizer,
-            'agenda': event.agenda,
+            'agenda': serialized_agenda,
             'vacants': event.vacants,
-            'FAQ': event.FAQ,
+            'FAQ': serialized_faq,
             '_id': event.id,
         }
 
         return serialized
 
+    def __deserialize_agenda(self, agenda):
+        deserialized_agenda = [
+            Agenda(
+                time_init=element['time_init'],
+                time_end=element['time_end'],
+                title=element['title'],
+                owner=element['owner'],
+                description=element['description'],
+            )
+            for element in agenda
+        ]
+        return deserialized_agenda
+
+    def __deserialize_faq(self, faq):
+        deserialized_faq = [
+            Faq(
+                question=element['question'],
+                answer=element['answer'],
+            )
+            for element in faq
+        ]
+        return deserialized_faq
+
     def __deserialize_event(self, data: dict) -> Event:
+
+        deserialized_agenda = self.__deserialize_agenda(data['agenda'])
+        deserialized_faq = self.__deserialize_faq(data['FAQ'])
 
         return Event(
             id=data['_id'],
@@ -152,7 +204,7 @@ class PersistentEventRepository(EventRepository):
             start_time=time.fromisoformat(data['start_time']),
             end_time=time.fromisoformat(data['end_time']),
             organizer=data['organizer'],
-            agenda=data['agenda'],
+            agenda=deserialized_agenda,
             vacants=data['vacants'],
-            FAQ=data['FAQ'],
+            FAQ=deserialized_faq,
         )

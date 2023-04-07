@@ -20,9 +20,11 @@ class LocationSchema(BaseModel):
     lat: float
     lng: float
 
+
 class FaqSchema(BaseModel):
     question: str = Field(..., min_length=3)
     answer: str = Field(..., min_length=3)
+
 
 class AgendaSchema(BaseModel):
     time_init: str = Field(..., min_length=3)
@@ -62,6 +64,24 @@ class EventSchema(EventSchemaBase):
             lat=event.location.lat,
             lng=event.location.lng,
         )
+        agenda = [
+            AgendaSchema(
+                time_init=element.time_init,
+                time_end=element.time_end,
+                owner=element.owner,
+                title=element.title,
+                description=element.description,
+            )
+            for element in event.agenda
+        ]
+
+        faq = [
+            FaqSchema(
+                question=element.question,
+                answer=element.answer,
+            )
+            for element in event.FAQ
+        ]
 
         return EventSchema(
             name=event.name,
@@ -74,8 +94,8 @@ class EventSchema(EventSchemaBase):
             start_time=event.start_time,
             end_time=event.end_time,
             organizer=event.organizer,
-            agenda=event.agenda,
+            agenda=agenda,
             vacants=event.vacants,
-            FAQ=event.FAQ,
+            FAQ=faq,
             id=event.id,
         )
