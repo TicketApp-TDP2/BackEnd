@@ -19,3 +19,4 @@ class Organizer:
         self.profession = profession
         self.about_me = about_me
         self.profile_picture = profile_picture
+

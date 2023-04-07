@@ -12,6 +12,7 @@ logger = setup_logger(name=__name__)
 router = APIRouter()
 
 
+
 @router.post('/users', status_code=status.HTTP_201_CREATED, response_model=UserSchema, tags=["Users"])
 async def create_user(user_body: UserCreateSchema):
     try:

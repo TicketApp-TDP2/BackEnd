@@ -8,9 +8,10 @@ class UserSchemaBase(BaseModel):
     first_name: str = Field(..., min_length=3)
     last_name: str = Field(..., min_length=3)
     email: EmailStr
-    birth_date: Optional[str] #= Field(..., min_length=3)
+    birth_date: Optional[str]
     identification_number: Optional[str]
     phone_number: Optional[str]
+    id: str = Field(..., min_length=1)
 
 
 class UserCreateSchema(UserSchemaBase):

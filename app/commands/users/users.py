@@ -25,7 +25,7 @@ class CreateUserCommand:
             identification_number=self.user_data.identification_number,
             phone_number=self.user_data.phone_number,
             favourites=[],
-            id=str(uuid.uuid4()),
+            id=self.user_data.id
         )
         already_exists = self.user_repository.user_exists_by_email(
             user.email
