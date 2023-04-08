@@ -11,7 +11,7 @@ class OrganizerSchemaBase(BaseModel):
     email: EmailStr
     profession: Optional[str]    
     about_me: Optional[str]
-    profile_picture: str = Field(..., min_length=3)
+    profile_picture: Optional[str]
     id: str = Field(..., min_length=3)
 
 
@@ -24,7 +24,7 @@ class OrganizerUpdateSchema(BaseModel):
     last_name: Optional[str] = Field(..., min_length=3)
     profession: Optional[str]    
     about_me: Optional[str]
-    profile_picture: Optional[str] = Field(..., min_length=3)
+    profile_picture: Optional[str]
 
 
 class OrganizerSchema(OrganizerSchemaBase):
@@ -38,5 +38,5 @@ class OrganizerSchema(OrganizerSchemaBase):
             id=organizer.id,
             profession=organizer.profession if organizer.profession else "",
             about_me=organizer.about_me if organizer.about_me else "",
-            profile_picture=organizer.profile_picture,
+            profile_picture=organizer.profile_picture if organizer.profile_picture else "https://i.pinimg.com/736x/83/bc/8b/83bc8b88cf6bc4b4e04d153a418cde62.jpg"
         )
