@@ -1,3 +1,4 @@
+import json
 from typing import List
 from app.models.event import Agenda, Event, Faq, Location
 from app.schemas.event import (
@@ -97,4 +98,5 @@ class SearchEventsCommand:
 
     def execute(self) -> List[EventSchema]:
         events = self.event_repository.search_events(self.search)
-        return list(map(EventSchema.from_model, events))
+        events_ordered = sorted(events, key=lambda h: (h.vacants), reverse=True)
+        return list(map(EventSchema.from_model, events_ordered))
