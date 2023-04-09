@@ -100,7 +100,6 @@ class Event:
         vacants: int,
         FAQ: list[Faq],
     ) -> Event:
-
         return Event(
             id=str(uuid.uuid4()),
             name=name,

@@ -41,8 +41,8 @@ def create_event():
         'images': ['image1', 'image2', 'image3'],
         'preview_image': 'preview_image',
         'date': '2023-03-29',
-        'start_time': '16:00:00',
-        'end_time': '18:00:00',
+        'start_time': '09:00:00',
+        'end_time': '12:00:00',
         'organizer': 'anOwner',
         'agenda': [
             {
