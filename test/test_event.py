@@ -10,7 +10,7 @@ client = TestClient(app)
 URI = 'api/events'
 
 
-def create_event(fields={}):
+def create_event_body(fields={}):
     body = {
         'name': 'aName',
         'description': 'aDescription',
@@ -23,8 +23,8 @@ def create_event(fields={}):
         'images': ['image1', 'image2', 'image3'],
         'preview_image': 'preview_image',
         'date': '2023-03-29',
-        'start_time': '16:00:00',
-        'end_time': '18:00:00',
+        'start_time': '09:00:00',
+        'end_time': '12:00:00',
         'organizer': 'anOwner',
         'agenda': [
             {
@@ -48,6 +48,11 @@ def create_event(fields={}):
     for k, v in fields.items():
         body[k] = v
 
+    return body
+
+
+def create_event(fields={}):
+    body = create_event_body(fields)
     response = client.post(URI, json=body)
     return response.json()
 
@@ -83,8 +88,8 @@ def test_event_create_with_wrong_body():
         'images': ['image1', 'image2', 'image3'],
         'preview_image': 'preview_image',
         'date': '2023-03-29',
-        'start_time': '16:00:00',
-        'end_time': '18:00:00',
+        'start_time': '09:00:00',
+        'end_time': '12:00:00',
         'organizer': 'anOwner',
         'agenda': [
             {
@@ -329,14 +334,6 @@ def test_search_event_by_name():
     assert not any(map(lambda e: e['name'] in data_names, [event3]))
 
 
-def test_event_create_with_empty_agenda():
-    body = create_event({"agenda": []})
-    response = client.post(URI, json=body)
-    response_data = response.json()
-    assert response.status_code == 201
-    assert 'id' in response_data
-
-
 def test_event_create_with_empty_faq():
     body = create_event({"FAQ": []})
     response = client.post(URI, json=body)
@@ -348,6 +345,7 @@ def test_event_create_with_empty_faq():
 def test_event_create_with_two_agenda():
     body = create_event(
         {
+            "end_time": "14:00",
             "agenda": [
                 {
                     'time_init': '09:00',
@@ -363,7 +361,7 @@ def test_event_create_with_two_agenda():
                     'title': 'Noche de teatro en Bs As 2',
                     'description': 'Una noche de teatro unica 2',
                 },
-            ]
+            ],
         }
     )
     response = client.post(URI, json=body)
@@ -385,3 +383,92 @@ def test_event_create_with_two_faq():
     response_data = response.json()
     assert response.status_code == 201
     assert 'id' in response_data
+
+
+def test_create_event_with_empty_space_in_agenda():
+    body = create_event_body(
+        {
+            "agenda": [
+                {
+                    'time_init': '09:00',
+                    'time_end': '10:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                },
+                {
+                    'time_init': '11:00',
+                    'time_end': '12:00',
+                    'owner': 'Agustin',
+                    'title': 'Noche de teatro en Bs As 2',
+                    'description': 'Una noche de teatro unica 2',
+                },
+            ]
+        }
+    )
+    response = client.post(URI, json=body)
+    data = response.json()
+    assert response.status_code == 400
+    assert data['detail'] == 'Agenda can not have empty spaces'
+
+
+def test_create_event_empty_agenda():
+    body = create_event_body({"agenda": []})
+    response = client.post(URI, json=body)
+    data = response.json()
+    assert response.status_code == 400
+    assert data['detail'] == 'Agenda can not be empty'
+
+
+def test_create_event_with_overlap_in_agenda():
+    body = create_event_body(
+        {
+            "agenda": [
+                {
+                    'time_init': '09:00',
+                    'time_end': '11:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                },
+                {
+                    'time_init': '10:00',
+                    'time_end': '12:00',
+                    'owner': 'Agustin',
+                    'title': 'Noche de teatro en Bs As 2',
+                    'description': 'Una noche de teatro unica 2',
+                },
+            ]
+        }
+    )
+    response = client.post(URI, json=body)
+    data = response.json()
+    assert response.status_code == 400
+    assert data['detail'] == 'Agenda can not have overlap'
+
+
+def test_create_event_with_agenda_ending_after_event():
+    body = create_event_body(
+        {
+            "agenda": [
+                {
+                    'time_init': '09:00',
+                    'time_end': '11:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                },
+                {
+                    'time_init': '11:00',
+                    'time_end': '13:00',
+                    'owner': 'Agustin',
+                    'title': 'Noche de teatro en Bs As 2',
+                    'description': 'Una noche de teatro unica 2',
+                },
+            ]
+        }
+    )
+    response = client.post(URI, json=body)
+    data = response.json()
+    assert response.status_code == 400
+    assert data['detail'] == 'Agenda can not end after event end'
