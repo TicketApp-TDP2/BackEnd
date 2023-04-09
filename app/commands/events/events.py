@@ -122,5 +122,5 @@ class SearchEventsCommand:
 
     def execute(self) -> List[EventSchema]:
         events = self.event_repository.search_events(self.search)
-        events_ordered = sorted(events, key=lambda h: (h.vacants), reverse=True)
+        events_ordered = sorted(events, key=lambda h: (h.vacants), reverse=False)
         return list(map(EventSchema.from_model, events_ordered))
