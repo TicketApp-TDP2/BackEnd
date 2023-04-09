@@ -6,7 +6,7 @@ from app.app import app
 
 client = TestClient(app)
 
-URI = 'api/users'
+URI = 'api/organizers'
 
 
 @pytest.fixture(autouse=True)
@@ -19,22 +19,22 @@ def clear_db():
     client.post('api/reset')
 
 
-def test_get_user_not_exists():
+def test_get_organizer_not_exists():
     response = client.get(URI + "/notexists")
     data = response.json()
     assert response.status_code == 404
-    assert data['detail'] == "User not found"
+    assert data['detail'] == "Organizer not found"
 
 
-def create_user_body(fields={}):
+def create_organizer_body(fields={}):
     body = {
         'first_name': 'first_name',
         'last_name': 'last_name',
         'email': 'email@mail.com',
-        'identification_number': '40400400',
-        'phone_number': '1180808080',
-        "birth_date": "1990-01-01",
-        "id":"784578"
+        'profession': 'profession',
+        'about_me': 'about_me',
+        'profile_picture': 'profile_picture',
+        'id': '123',
     }
 
     for k, v in fields.items():
@@ -43,8 +43,8 @@ def create_user_body(fields={}):
     return body
 
 
-def test_user_create_succesfully():
-    body = create_user_body()
+def test_organizer_create_succesfully():
+    body = create_organizer_body()
     response = client.post(URI, json=body)
 
     assert response.status_code == 201
@@ -54,8 +54,8 @@ def test_user_create_succesfully():
     assert body == data
 
 
-def test_user_create_existing_user_fails():
-    body = create_user_body()
+def test_organizer_create_existing_organizer_fails():
+    body = create_organizer_body()
     # Created first time
     client.post(URI, json=body)
     # Try to create again
@@ -63,17 +63,17 @@ def test_user_create_existing_user_fails():
 
     data = response.json()
     assert response.status_code == 400
-    assert data['detail'] == "User already exists"
+    assert data['detail'] == "Organizer already exists"
 
 
-def test_user_create_wrong_body():
-    body = create_user_body()
+def test_organizer_create_wrong_body():
+    body = create_organizer_body()
 
     invalid_variations = {
         'first_name': [None, '', 'aa'],
         'last_name': [None, '', 'aa'],
         'email': [None, '', 'email', 'a', 'email.com'],
-        #'birth_date': [None, '', 'a', 'aa'],
+        'id': [None, ''],
     }
 
     invalid_bodies = generate_invalid(body, invalid_variations)
@@ -86,10 +86,30 @@ def test_user_create_wrong_body():
         assert response.status_code == 422
 
 
-def test_user_create_and_retrieve_successfully():
-    body = create_user_body()
+def test_organizer_create_and_retrieve_successfully():
+    body = create_organizer_body()
     id = client.post(URI, json=body).json()["id"]
     response = client.get(URI + f"/{id}")
     data = response.json()
     body["id"] = id
     assert body == data
+
+
+def test_organizer_update():
+    body = create_organizer_body()
+    id = client.post(URI, json=body).json()["id"]
+    new_body = {
+        "first_name": "new_first_name",
+        "last_name": "new_last_name",
+        "profession": "new_profession",
+        "about_me": "new_about_me",
+        "profile_picture": "new_profile_picture",
+    }
+    response = client.put(URI + f"/{id}", json=new_body)
+    assert response.status_code == 201
+    data = response.json()
+    assert data["first_name"] == new_body["first_name"]
+    assert data["last_name"] == new_body["last_name"]
+    assert data["profession"] == new_body["profession"]
+    assert data["about_me"] == new_body["about_me"]
+    assert data["profile_picture"] == new_body["profile_picture"]

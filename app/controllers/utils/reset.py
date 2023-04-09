@@ -7,7 +7,7 @@ logger = setup_logger(name=__name__)
 router = APIRouter()
 
 
-@router.post('/reset', status_code=status.HTTP_200_OK)
+@router.post('/reset', status_code=status.HTTP_200_OK, tags=["Utils"])
 async def reset():
     logger.info("Clearing Database")
     clear_db()
