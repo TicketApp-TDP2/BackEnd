@@ -5,20 +5,12 @@ from app.schemas.event import (
     EventCreateSchema,
     EventSchema,
 )
-from .errors import (
-    EventAlreadyExistsError,
-    EventNotFoundError,
-    AgendaEmptyError,
-    AgendaEmptySpaceError,
-    AgendaOverlapError,
-    AgendaTooLargeError,
-)
+from .errors import EventAlreadyExistsError, EventNotFoundError
 from app.repositories.event import (
     EventRepository,
     Search,
 )
 from app.config.logger import setup_logger
-from datetime import time
 
 logger = setup_logger(__name__)
 
@@ -72,29 +64,12 @@ class CreateEventCommand:
             vacants=self.event_data.vacants,
             FAQ=faq,
         )
-        self.verify_agenda(agenda, event.end_time)
         already_exists = self.event_repository.event_exists(event.id)
         if already_exists:
             raise EventAlreadyExistsError
         event = self.event_repository.add_event(event)
 
         return EventSchema.from_model(event)
-
-    def verify_agenda(self, agenda: List[Agenda], end_time: str):
-        if len(agenda) == 0:
-            raise AgendaEmptyError
-        for i in range(1, len(agenda)):
-            if time.fromisoformat(agenda[i - 1].time_end) < time.fromisoformat(
-                agenda[i].time_init
-            ):
-                raise AgendaEmptySpaceError
-            if time.fromisoformat(agenda[i - 1].time_end) > time.fromisoformat(
-                agenda[i].time_init
-            ):
-                raise AgendaOverlapError
-        for element in agenda:
-            if time.fromisoformat(element.time_end) > end_time:
-                raise AgendaTooLargeError
 
 
 class GetEventCommand:
@@ -103,6 +78,7 @@ class GetEventCommand:
         self.id = _id
 
     def execute(self) -> EventSchema:
+
         exists = self.event_repository.event_exists(self.id)
         if not exists:
             raise EventNotFoundError
@@ -122,5 +98,5 @@ class SearchEventsCommand:
 
     def execute(self) -> List[EventSchema]:
         events = self.event_repository.search_events(self.search)
-        events_ordered = sorted(events, key=lambda h: (h.vacants), reverse=False)
+        events_ordered = sorted(events, key=lambda h: (h.vacants), reverse=True)
         return list(map(EventSchema.from_model, events_ordered))
