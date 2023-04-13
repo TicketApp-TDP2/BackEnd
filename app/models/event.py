@@ -65,6 +65,7 @@ class Event:
         organizer: str,
         agenda: list[Agenda],
         vacants: int,
+        vacants_left: int,
         FAQ: list[Faq],
         id: str,
     ):
@@ -80,6 +81,7 @@ class Event:
         self.organizer = organizer
         self.agenda = agenda
         self.vacants = vacants
+        self.vacants_left = vacants_left
         self.FAQ = FAQ
         self.id = id
 
@@ -98,6 +100,7 @@ class Event:
         organizer: str,
         agenda: list[Agenda],
         vacants: int,
+        vacants_left: int,
         FAQ: list[Faq],
     ) -> Event:
         return Event(
@@ -114,5 +117,6 @@ class Event:
             organizer=organizer,
             agenda=agenda,
             vacants=vacants,
+            vacants_left=vacants_left,
             FAQ=FAQ,
         )

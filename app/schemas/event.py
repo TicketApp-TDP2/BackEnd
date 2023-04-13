@@ -56,6 +56,7 @@ class EventCreateSchema(EventSchemaBase):
 
 class EventSchema(EventSchemaBase):
     id: str = Field(..., min_length=1)
+    vacants_left: int = Field(..., ge=0)
 
     @classmethod
     def from_model(cls, event: Event) -> EventSchema:
@@ -96,6 +97,7 @@ class EventSchema(EventSchemaBase):
             organizer=event.organizer,
             agenda=agenda,
             vacants=event.vacants,
+            vacants_left=event.vacants_left,
             FAQ=faq,
             id=event.id,
         )

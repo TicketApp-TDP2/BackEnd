@@ -202,6 +202,7 @@ def test_get_event_exists():
     id = response.json()['id']
     expected_response = body.copy()
     expected_response['id'] = id
+    expected_response['vacants_left'] = expected_response['vacants']
 
     response = client.get(f"{URI}/{id}")
     data = response.json()
@@ -472,3 +473,16 @@ def test_create_event_with_agenda_ending_after_event():
     data = response.json()
     assert response.status_code == 400
     assert data['detail'] == 'Agenda can not end after event end'
+
+
+def test_create_event_has_vacants_left():
+    number_of_vacants = 10
+    body = create_event_body(
+        {
+            "vacants": number_of_vacants,
+        }
+    )
+    response = client.post(URI, json=body)
+    data = response.json()
+    assert response.status_code == 201
+    assert data['vacants_left'] == number_of_vacants

@@ -70,6 +70,7 @@ class CreateEventCommand:
             end_time=self.event_data.end_time,
             agenda=agenda,
             vacants=self.event_data.vacants,
+            vacants_left=self.event_data.vacants,
             FAQ=faq,
         )
         self.verify_agenda(agenda, event.end_time)

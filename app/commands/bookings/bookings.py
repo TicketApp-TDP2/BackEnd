@@ -1,10 +1,11 @@
 from app.schemas.bookings import BookingCreateSchema, BookingSchema
 from app.models.booking import Booking
 
-from .errors import BookingAlreadyExistsError
+from .errors import BookingAlreadyExistsError, EventFullError
 from app.repositories.bookings import (
     BookingRepository,
 )
+from app.repositories.event import EventRepository
 from app.config.logger import setup_logger
 import uuid
 from typing import List
@@ -14,10 +15,14 @@ logger = setup_logger(__name__)
 
 class CreateBookingCommand:
     def __init__(
-        self, booking_repository: BookingRepository, booking: BookingCreateSchema
+        self,
+        booking_repository: BookingRepository,
+        booking: BookingCreateSchema,
+        event_repository: EventRepository,
     ):
         self.booking_repository = booking_repository
         self.booking_data = booking
+        self.event_repository = event_repository
 
     def execute(self) -> BookingSchema:
         booking = Booking(
@@ -30,6 +35,12 @@ class CreateBookingCommand:
         )
         if already_exists:
             raise BookingAlreadyExistsError
+        event = self.event_repository.get_event(booking.event_id)
+        if event.vacants_left == 0:
+            raise EventFullError
+        self.event_repository.update_vacants_left_event(
+            event.id, event.vacants_left - 1
+        )
         booking = self.booking_repository.add_booking(booking)
 
         return BookingSchema.from_model(booking)

@@ -248,3 +248,56 @@ def test_booking_get_by_reserver_two():
     booking_body2["id"] = data[1]["id"]
     assert data[0] == booking_body1
     assert data[1] == booking_body2
+
+
+def test_booking_vacants_left_is_one_less():
+    number_of_vacants = 10
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
+    event = create_event({'owner': organizer['id'], 'vacants': number_of_vacants})
+
+    event_id = event['id']
+    booking_body = {"event_id": event_id, "reserver_id": reserver['id']}
+    client.post(URI, json=booking_body)
+
+    response = client.get(f'api/events/{event_id}')
+    data = response.json()
+    assert data['id'] == event_id
+    assert data['vacants_left'] == number_of_vacants - 1
+
+
+def test_booking_vacants_left_is_two_less():
+    number_of_vacants = 10
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    reserver1 = create_user({'email': 'reserver1@mail.com', 'id': '2341'})
+    reserver2 = create_user({'email': 'reserver2@mail.com', 'id': '2342'})
+    event = create_event({'owner': organizer['id'], 'vacants': number_of_vacants})
+
+    event_id = event['id']
+    booking_body1 = {"event_id": event_id, "reserver_id": reserver1['id']}
+    client.post(URI, json=booking_body1)
+    booking_body2 = {"event_id": event_id, "reserver_id": reserver2['id']}
+    client.post(URI, json=booking_body2)
+
+    response = client.get(f'api/events/{event_id}')
+    data = response.json()
+    assert data['id'] == event_id
+    assert data['vacants_left'] == number_of_vacants - 2
+
+
+def test_booking_no_more_vacants():
+    number_of_vacants = 1
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    reserver1 = create_user({'email': 'reserver1@mail.com', 'id': '2341'})
+    reserver2 = create_user({'email': 'reserver2@mail.com', 'id': '2342'})
+    event = create_event({'owner': organizer['id'], 'vacants': number_of_vacants})
+
+    event_id = event['id']
+    booking_body1 = {"event_id": event_id, "reserver_id": reserver1['id']}
+    client.post(URI, json=booking_body1)
+
+    booking_body2 = {"event_id": event_id, "reserver_id": reserver2['id']}
+    response = client.post(URI, json=booking_body2)
+
+    assert response.status_code == 400
+    assert response.json() == {'detail': 'No more vacants left'}

@@ -56,6 +56,10 @@ class EventRepository(ABC):
     def get_events_by_id(self, ids: List[str]) -> List[Event]:
         pass
 
+    @abstractmethod
+    def update_vacants_left_event(self, id: str, vacants_left: int) -> Event:
+        pass
+
 
 class PersistentEventRepository(EventRepository):
     def __init__(self):
@@ -86,6 +90,13 @@ class PersistentEventRepository(EventRepository):
     def get_events_by_id(self, ids: List[str]) -> List[Event]:
         events = self.events.find({'_id': {'$in': ids}})
         return list(map(self.__deserialize_event, events))
+
+    def update_vacants_left_event(self, id: str, vacants_left: int) -> Event:
+        event = self.get_event(id)
+        event.vacants_left = vacants_left
+        data = self.__serialize_event(event)
+        self.events.update_one({'_id': id}, {'$set': data})
+        return event
 
     def __serialize_search(self, search: Search) -> dict:
         srch = {
@@ -133,7 +144,6 @@ class PersistentEventRepository(EventRepository):
         return serialized_faq
 
     def __serialize_event(self, event: Event) -> dict:
-
         serialized_agenda = self.__serialize_agenda(event.agenda)
         serialized_faq = self.__serialize_faq(event.FAQ)
 
@@ -154,6 +164,7 @@ class PersistentEventRepository(EventRepository):
             'organizer': event.organizer,
             'agenda': serialized_agenda,
             'vacants': event.vacants,
+            'vacants_left': event.vacants_left,
             'FAQ': serialized_faq,
             '_id': event.id,
         }
@@ -184,7 +195,6 @@ class PersistentEventRepository(EventRepository):
         return deserialized_faq
 
     def __deserialize_event(self, data: dict) -> Event:
-
         deserialized_agenda = self.__deserialize_agenda(data['agenda'])
         deserialized_faq = self.__deserialize_faq(data['FAQ'])
 
@@ -206,5 +216,6 @@ class PersistentEventRepository(EventRepository):
             organizer=data['organizer'],
             agenda=deserialized_agenda,
             vacants=data['vacants'],
+            vacants_left=data['vacants_left'],
             FAQ=deserialized_faq,
         )
