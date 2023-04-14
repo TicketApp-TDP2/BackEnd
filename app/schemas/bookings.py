@@ -12,6 +12,10 @@ class BookingCreateSchema(BookingSchemaBase):
     pass
 
 
+class verifyBookingSchema(BaseModel):
+    event_id: str = Field(..., min_length=1)
+
+
 class BookingSchema(BookingSchemaBase):
     id: str = Field(..., min_length=1)
     verified: bool

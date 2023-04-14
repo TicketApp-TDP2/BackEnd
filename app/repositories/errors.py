@@ -22,3 +22,9 @@ class EventNotFoundError(RepositoryError):
     def __init__(self):
         msg = "Event not found"
         super().__init__(msg)
+
+
+class BookingNotFoundError(RepositoryError):
+    def __init__(self):
+        msg = "Booking not found"
+        super().__init__(msg)

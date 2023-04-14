@@ -1,7 +1,12 @@
 from app.schemas.bookings import BookingCreateSchema, BookingSchema
 from app.models.booking import Booking
 
-from .errors import BookingAlreadyExistsError, EventFullError
+from .errors import (
+    BookingAlreadyExistsError,
+    EventFullError,
+    IncorrectEventError,
+    BookingAlreadyVerifiedError,
+)
 from app.repositories.bookings import (
     BookingRepository,
 )
@@ -55,3 +60,22 @@ class GetBookingsByReserverCommand:
     def execute(self) -> List[BookingSchema]:
         bookings = self.booking_repository.get_bookings_by_reserver(self.reserver_id)
         return [BookingSchema.from_model(booking) for booking in bookings]
+
+
+class VerifyBookingCommand:
+    def __init__(
+        self, booking_repository: BookingRepository, booking_id: str, event_id: str
+    ):
+        self.booking_repository = booking_repository
+        self.booking_id = booking_id
+        self.event_id = event_id
+
+    def execute(self) -> BookingSchema:
+        booking = self.booking_repository.get_booking(self.booking_id)
+        if booking.event_id != self.event_id:
+            raise IncorrectEventError
+        if not booking.verified:
+            booking = self.booking_repository.verify_booking(self.booking_id)
+        else:
+            raise BookingAlreadyVerifiedError
+        return BookingSchema.from_model(booking)

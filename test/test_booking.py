@@ -307,3 +307,69 @@ def test_booking_no_more_vacants():
 
     assert response.status_code == 400
     assert response.json() == {'detail': 'No more vacants left'}
+
+
+def test_verify_booking():
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
+    event = create_event({'owner': organizer['id']})
+
+    event_id = event['id']
+    booking_body = {"event_id": event_id, "reserver_id": reserver['id']}
+    response = client.post(URI, json=booking_body)
+    data = response.json()
+    booking_id = data['id']
+
+    body = {"event_id": event_id}
+    response = client.put(URI + f'/{booking_id}/verify', json=body)
+    assert response.status_code == 200
+
+
+def test_verify_non_existing_booking():
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    event = create_event({'owner': organizer['id']})
+
+    non_existing_booking_id = "123"
+    event_id = event['id']
+    body = {"event_id": event_id}
+
+    response = client.put(URI + f'/{non_existing_booking_id}/verify', json=body)
+    assert response.status_code == 400
+    assert response.json() == {'detail': 'Booking not found'}
+
+
+def test_verify_booking_with_wrong_event_id():
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
+    event = create_event({'owner': organizer['id']})
+    event2 = create_event({'owner': organizer['id']})
+
+    event_id1 = event['id']
+    event_id2 = event2['id']
+    booking_body = {"event_id": event_id1, "reserver_id": reserver['id']}
+    response = client.post(URI, json=booking_body)
+    data = response.json()
+    booking_id = data['id']
+
+    body = {"event_id": event_id2}
+    response = client.put(URI + f'/{booking_id}/verify', json=body)
+    assert response.status_code == 400
+    assert response.json() == {'detail': 'Incorrect Event'}
+
+
+def test_verify_booking_twice():
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
+    event = create_event({'owner': organizer['id']})
+
+    event_id = event['id']
+    booking_body = {"event_id": event_id, "reserver_id": reserver['id']}
+    response = client.post(URI, json=booking_body)
+    data = response.json()
+    booking_id = data['id']
+
+    body = {"event_id": event_id}
+    client.put(URI + f'/{booking_id}/verify', json=body)
+    response = client.put(URI + f'/{booking_id}/verify', json=body)
+    assert response.status_code == 400
+    assert response.json() == {'detail': 'Booking already verified'}
