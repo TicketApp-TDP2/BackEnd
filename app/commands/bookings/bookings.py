@@ -29,6 +29,7 @@ class CreateBookingCommand:
             event_id=self.booking_data.event_id,
             reserver_id=self.booking_data.reserver_id,
             id=str(uuid.uuid4()),
+            verified=False,
         )
         already_exists = self.booking_repository.booking_exists(
             booking.event_id, booking.reserver_id

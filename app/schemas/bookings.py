@@ -14,9 +14,13 @@ class BookingCreateSchema(BookingSchemaBase):
 
 class BookingSchema(BookingSchemaBase):
     id: str = Field(..., min_length=1)
+    verified: bool
 
     @classmethod
     def from_model(cls, booking: Booking) -> BookingSchema:
         return BookingSchema(
-            event_id=booking.event_id, reserver_id=booking.reserver_id, id=booking.id
+            event_id=booking.event_id,
+            reserver_id=booking.reserver_id,
+            id=booking.id,
+            verified=booking.verified,
         )

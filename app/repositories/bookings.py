@@ -44,6 +44,7 @@ class PersistentBookingRepository(BookingRepository):
             '_id': booking.id,
             "event_id": booking.event_id,
             "reserver_id": booking.reserver_id,
+            "verified": booking.verified,
         }
 
         return serialized
@@ -53,4 +54,5 @@ class PersistentBookingRepository(BookingRepository):
             id=data['_id'],
             event_id=data['event_id'],
             reserver_id=data['reserver_id'],
+            verified=data['verified'],
         )
