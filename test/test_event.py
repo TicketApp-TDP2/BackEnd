@@ -519,3 +519,46 @@ def test_publish_non_existing_event():
     data = response.json()
     assert response.status_code == 400
     assert data['detail'] == 'Event not found'
+
+
+def test_search_event_only_pusblished():
+    event1 = create_event({"name": "event1"})
+    event2 = create_event({"name": "event2"})
+    event3 = create_event({"name": "event3"})
+
+    client.put(f"{URI}/{event1['id']}/publish")
+    client.put(f"{URI}/{event2['id']}/publish")
+
+    response = client.get(f"{URI}?only_published=True")
+    data = response.json()
+
+    data_names = map(lambda e: e['name'], data)
+
+    assert len(data) == 2
+    assert all(map(lambda e: e['name'] in data_names, [event1, event2]))
+    assert not any(map(lambda e: e['name'] in data_names, [event3]))
+
+
+def test_search_event_published_false():
+    event1 = create_event({"name": "event1"})
+    event2 = create_event({"name": "event2"})
+    event3 = create_event({"name": "event3"})
+
+    client.put(f"{URI}/{event1['id']}/publish")
+    client.put(f"{URI}/{event2['id']}/publish")
+
+    response = client.get(f"{URI}?only_published=False")
+    data = response.json()
+
+    data_names = map(lambda e: e['name'], data)
+
+    assert len(data) == 3
+    assert all(map(lambda e: e['name'] in data_names, [event1, event2, event3]))
+
+
+def test_search_event_published_incorrect_value():
+    response = client.get(f"{URI}?only_published=Fals")
+    assert response.status_code == 422
+    assert (
+        response.json()['detail'][0]["msg"] == 'value could not be parsed to a boolean'
+    )

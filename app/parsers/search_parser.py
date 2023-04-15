@@ -20,4 +20,5 @@ class SearchEventsParser:
             type=search.type,
             limit=search.limit,
             name=search.name,
+            only_published=search.only_published,
         )

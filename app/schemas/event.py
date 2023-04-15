@@ -13,6 +13,7 @@ class SearchEvent(BaseModel):
     type: Optional[Type]
     limit: int = Field(default=5)
     name: Optional[str]
+    only_published: Optional[bool]
 
 
 class LocationSchema(BaseModel):

@@ -27,12 +27,14 @@ class Search:
         location: Optional[SearchLocation],
         limit: int,
         name: str,
+        only_published: bool,
     ):
         self.organizer = organizer
         self.type = type
         self.location = location
         self.limit = limit
         self.name = name
+        self.only_published = only_published
 
 
 class EventRepository(ABC):
@@ -117,6 +119,9 @@ class PersistentEventRepository(EventRepository):
 
         if search.name:
             srch['name'] = {'$regex': search.name, '$options': 'i'}
+
+        if search.only_published:
+            srch['state'] = State.Publicado.value
 
         if search.location:
             lng = search.location.lng
