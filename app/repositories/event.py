@@ -126,7 +126,20 @@ class PersistentEventRepository(EventRepository):
             srch['state'] = State.Publicado.value
 
         if search.not_finished:
-            srch['date'] = {'$gte': datetime.datetime.now().isoformat()}
+            now = datetime.datetime.now()
+            srch['$or'] = [
+                {
+                    '$and': [
+                        {'date': {'$gt': now.date().isoformat()}},
+                    ]
+                },
+                {
+                    '$and': [
+                        {'date': {'$eq': now.date().isoformat()}},
+                        {'end_time': {'$gt': now.time().isoformat()}},
+                    ]
+                },
+            ]
 
         if search.location:
             lng = search.location.lng

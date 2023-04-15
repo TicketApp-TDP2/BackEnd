@@ -69,7 +69,7 @@ def mock_date(monkeypatch, date):
     class MyDatetime(datetime.datetime):
         @classmethod
         def now(cls):
-            return cls(date["year"], date["month"], date["day"])
+            return cls(date["year"], date["month"], date["day"], date["hour"])
 
     monkeypatch.setattr(datetime, 'datetime', MyDatetime)
 
@@ -575,12 +575,12 @@ def test_search_event_published_incorrect_value():
 
 
 def test_date(monkeypatch):
-    mock_date(monkeypatch, {"year": 2023, "month": 4, "day": 12})
-    assert datetime.datetime.now() == datetime.datetime(2023, 4, 12)
+    mock_date(monkeypatch, {"year": 2023, "month": 4, "day": 12, "hour": 1})
+    assert datetime.datetime.now() == datetime.datetime(2023, 4, 12, 1)
 
 
 def test_search_events_not_finished(monkeypatch):
-    mock_date(monkeypatch, {"year": 2021, "month": 1, "day": 2})
+    mock_date(monkeypatch, {"year": 2021, "month": 1, "day": 2, "hour": 1})
     event1 = create_event({"name": "event1", "date": "2021-01-01"})
     event2 = create_event({"name": "event2", "date": "2021-01-03"})
     event3 = create_event({"name": "event3", "date": "2024-01-04"})
@@ -596,7 +596,7 @@ def test_search_events_not_finished(monkeypatch):
 
 
 def test_search_events_not_finished_false(monkeypatch):
-    mock_date(monkeypatch, {"year": 2021, "month": 1, "day": 2})
+    mock_date(monkeypatch, {"year": 2021, "month": 1, "day": 2, "hour": 1})
     event1 = create_event({"name": "event1", "date": "2021-01-01"})
     event2 = create_event({"name": "event2", "date": "2021-01-03"})
     event3 = create_event({"name": "event3", "date": "2024-01-04"})
@@ -611,7 +611,7 @@ def test_search_events_not_finished_false(monkeypatch):
 
 
 def test_search_events_not_finished_2(monkeypatch):
-    mock_date(monkeypatch, {"year": 2021, "month": 1, "day": 2})
+    mock_date(monkeypatch, {"year": 2021, "month": 1, "day": 2, "hour": 1})
     event1 = create_event({"name": "event1", "date": "2020-01-01"})
     event2 = create_event({"name": "event2", "date": "2021-01-03"})
     event3 = create_event({"name": "event3", "date": "2022-01-04"})
@@ -627,10 +627,32 @@ def test_search_events_not_finished_2(monkeypatch):
 
 
 def test_search_events_not_finished_3(monkeypatch):
-    mock_date(monkeypatch, {"year": 2021, "month": 2, "day": 2})
+    mock_date(monkeypatch, {"year": 2021, "month": 2, "day": 2, "hour": 1})
     event1 = create_event({"name": "event1", "date": "2020-01-01"})
     event2 = create_event({"name": "event2", "date": "2021-02-04"})
     event3 = create_event({"name": "event3", "date": "2022-03-04"})
+
+    response = client.get(f"{URI}?not_finished=True")
+    data = response.json()
+
+    data_names = map(lambda e: e['name'], data)
+
+    assert len(data) == 2
+    assert all(map(lambda e: e['name'] in data_names, [event2, event3]))
+    assert not any(map(lambda e: e['name'] in data_names, [event1]))
+
+
+def test_search_events_not_finished_with_time(monkeypatch):
+    mock_date(monkeypatch, {"year": 2021, "month": 2, "day": 2, "hour": 15})
+    event1 = create_event(
+        {"name": "event1", "date": "2021-02-02", "end_time": "12:00:00"}
+    )
+    event2 = create_event(
+        {"name": "event2", "date": "2021-02-02", "end_time": "16:00:00"}
+    )
+    event3 = create_event(
+        {"name": "event3", "date": "2021-02-02", "end_time": "18:00:00"}
+    )
 
     response = client.get(f"{URI}?not_finished=True")
     data = response.json()
