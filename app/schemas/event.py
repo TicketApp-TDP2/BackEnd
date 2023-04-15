@@ -14,6 +14,7 @@ class SearchEvent(BaseModel):
     limit: int = Field(default=5)
     name: Optional[str]
     only_published: Optional[bool]
+    not_finished: Optional[bool]
 
 
 class LocationSchema(BaseModel):

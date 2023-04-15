@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from app.models.event import Type, Event, Location, Agenda, Faq, State
 from app.repositories.errors import EventNotFoundError
 from datetime import date, time
-
+import datetime
 
 EARTH_RADIUS_METERS = 6_371_000
 
@@ -28,6 +28,7 @@ class Search:
         limit: int,
         name: str,
         only_published: bool,
+        not_finished: bool,
     ):
         self.organizer = organizer
         self.type = type
@@ -35,6 +36,7 @@ class Search:
         self.limit = limit
         self.name = name
         self.only_published = only_published
+        self.not_finished = not_finished
 
 
 class EventRepository(ABC):
@@ -122,6 +124,9 @@ class PersistentEventRepository(EventRepository):
 
         if search.only_published:
             srch['state'] = State.Publicado.value
+
+        if search.not_finished:
+            srch['date'] = {'$gte': datetime.datetime.now().isoformat()}
 
         if search.location:
             lng = search.location.lng
