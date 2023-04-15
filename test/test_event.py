@@ -495,3 +495,27 @@ def test_create_event_has_vacants_left():
     data = response.json()
     assert response.status_code == 201
     assert data['vacants_left'] == number_of_vacants
+
+
+def test_publish_event():
+    event = create_event()
+    response = client.put(f"{URI}/{event['id']}/publish")
+    data = response.json()
+    assert response.status_code == 200
+    assert data['state'] == 'Publicado'
+
+
+def test_publish_event_twice():
+    event = create_event()
+    client.put(f"{URI}/{event['id']}/publish")
+    response = client.put(f"{URI}/{event['id']}/publish")
+    data = response.json()
+    assert response.status_code == 400
+    assert data['detail'] == 'Event is not in Borrador state'
+
+
+def test_publish_non_existing_event():
+    response = client.put(f"{URI}/1/publish")
+    data = response.json()
+    assert response.status_code == 400
+    assert data['detail'] == 'Event not found'

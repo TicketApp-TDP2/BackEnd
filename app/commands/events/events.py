@@ -1,6 +1,6 @@
 import json
 from typing import List
-from app.models.event import Agenda, Event, Faq, Location
+from app.models.event import Agenda, Event, Faq, Location, State
 from app.schemas.event import (
     EventCreateSchema,
     EventSchema,
@@ -12,6 +12,7 @@ from .errors import (
     AgendaEmptySpaceError,
     AgendaOverlapError,
     AgendaTooLargeError,
+    EventNotBorradorError,
 )
 from app.repositories.event import (
     EventRepository,
@@ -125,3 +126,20 @@ class SearchEventsCommand:
         events = self.event_repository.search_events(self.search)
         events_ordered = sorted(events, key=lambda h: (h.vacants), reverse=False)
         return list(map(EventSchema.from_model, events_ordered))
+
+
+class PublishEventCommand:
+    def __init__(self, event_repository: EventRepository, _id: str):
+        self.event_repository = event_repository
+        self.id = _id
+
+    def execute(self) -> EventSchema:
+        exists = self.event_repository.event_exists(self.id)
+        if not exists:
+            raise EventNotFoundError
+        event = self.event_repository.get_event(self.id)
+        if event.state == State.Borrador:
+            event = self.event_repository.update_state_event(self.id, State.Publicado)
+        else:
+            raise EventNotBorradorError
+        return EventSchema.from_model(event)

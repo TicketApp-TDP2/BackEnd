@@ -35,3 +35,9 @@ class AgendaTooLargeError(BusinessError):
     def __init__(self):
         msg = "Agenda can not end after event end"
         super().__init__(msg)
+
+
+class EventNotBorradorError(BusinessError):
+    def __init__(self):
+        msg = "Event is not in Borrador state"
+        super().__init__(msg)

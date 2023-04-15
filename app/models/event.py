@@ -52,6 +52,7 @@ class Type(Enum):
 
 class State(Enum):
     Borrador = "Borrador"
+    Publicado = "Publicado"
 
 
 class Event:

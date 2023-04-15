@@ -60,6 +60,10 @@ class EventRepository(ABC):
     def update_vacants_left_event(self, id: str, vacants_left: int) -> Event:
         pass
 
+    @abstractmethod
+    def update_state_event(self, id: str, state: State) -> Event:
+        pass
+
 
 class PersistentEventRepository(EventRepository):
     def __init__(self):
@@ -94,6 +98,13 @@ class PersistentEventRepository(EventRepository):
     def update_vacants_left_event(self, id: str, vacants_left: int) -> Event:
         event = self.get_event(id)
         event.vacants_left = vacants_left
+        data = self.__serialize_event(event)
+        self.events.update_one({'_id': id}, {'$set': data})
+        return event
+
+    def update_state_event(self, id: str, state: State) -> Event:
+        event = self.get_event(id)
+        event.state = state
         data = self.__serialize_event(event)
         self.events.update_one({'_id': id}, {'$set': data})
         return event
