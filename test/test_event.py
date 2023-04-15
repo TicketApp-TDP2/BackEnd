@@ -653,3 +653,25 @@ def test_search_events_not_finished_with_time(monkeypatch):
     assert len(data) == 2
     assert all(map(lambda e: e['name'] in data_names, [event2, event3]))
     assert not any(map(lambda e: e['name'] in data_names, [event1]))
+
+
+def test_search_event_finished(monkeypatch):
+    mock_date(monkeypatch, {"year": 2021, "month": 2, "day": 2, "hour": 15})
+    event = create_event({"name": "event1", "date": "2021-02-01"})
+    response = client.get(f"{URI}")
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]['name'] == event['name']
+    assert data[0]['state'] == "Finalizado"
+
+
+def test_search_event_finished_hour(monkeypatch):
+    mock_date(monkeypatch, {"year": 2021, "month": 2, "day": 2, "hour": 15})
+    event = create_event(
+        {"name": "event1", "date": "2021-02-02", "end_time": "12:00:00"}
+    )
+    response = client.get(f"{URI}")
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]['name'] == event['name']
+    assert data[0]['state'] == "Finalizado"

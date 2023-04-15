@@ -20,6 +20,7 @@ from app.repositories.event import (
 )
 from app.config.logger import setup_logger
 from datetime import time
+import datetime
 
 logger = setup_logger(__name__)
 
@@ -124,8 +125,23 @@ class SearchEventsCommand:
 
     def execute(self) -> List[EventSchema]:
         events = self.event_repository.search_events(self.search)
-        events_ordered = sorted(events, key=lambda h: (h.vacants), reverse=False)
+        events_with_finished = self.check_finished(events)
+        events_ordered = sorted(
+            events_with_finished, key=lambda h: (h.vacants), reverse=False
+        )
         return list(map(EventSchema.from_model, events_ordered))
+
+    def check_finished(self, events: List[Event]) -> List[Event]:
+        now = datetime.datetime.now().date()
+        time = datetime.datetime.now().time()
+        new_events = []
+        for event in events:
+            if event.date < now or (event.date == now and event.end_time < time):
+                event = self.event_repository.update_state_event(
+                    event.id, State.Finalizado
+                )
+            new_events.append(event)
+        return new_events
 
 
 class PublishEventCommand:
