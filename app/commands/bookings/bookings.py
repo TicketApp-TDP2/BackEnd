@@ -6,6 +6,8 @@ from .errors import (
     EventFullError,
     IncorrectEventError,
     BookingAlreadyVerifiedError,
+    EventNotPublishedError,
+    EventFinishedError,
 )
 from app.repositories.bookings import (
     BookingRepository,
@@ -14,6 +16,8 @@ from app.repositories.event import EventRepository
 from app.config.logger import setup_logger
 import uuid
 from typing import List
+from app.schemas.event import State
+import datetime
 
 logger = setup_logger(__name__)
 
@@ -44,6 +48,12 @@ class CreateBookingCommand:
         event = self.event_repository.get_event(booking.event_id)
         if event.vacants_left == 0:
             raise EventFullError
+        if event.state != State.Publicado:
+            raise EventNotPublishedError
+        now = datetime.datetime.now().date()
+        time = datetime.datetime.now().time()
+        if event.date < now or (event.date == now and event.end_time < time):
+            raise EventFinishedError
         self.event_repository.update_vacants_left_event(
             event.id, event.vacants_left - 1
         )

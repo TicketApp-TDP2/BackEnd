@@ -3,7 +3,7 @@ from pprint import pprint
 import pytest
 
 from app.app import app
-from test.utils import generate_invalid
+from test.utils import generate_invalid, mock_date
 import datetime
 
 client = TestClient(app)
@@ -63,15 +63,6 @@ def add_event_fields(event, fields={}):
         event[k] = v
 
     return event
-
-
-def mock_date(monkeypatch, date):
-    class MyDatetime(datetime.datetime):
-        @classmethod
-        def now(cls):
-            return cls(date["year"], date["month"], date["day"], date["hour"])
-
-    monkeypatch.setattr(datetime, 'datetime', MyDatetime)
 
 
 @pytest.fixture(autouse=True)

@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 from pprint import pprint
 import pytest
-from test.utils import generate_invalid
+from test.utils import generate_invalid, mock_date
 
 from app.app import app
 
@@ -102,10 +102,12 @@ def clear_db():
     client.post('api/reset')
 
 
-def test_booking_create_succesfully():
+def test_booking_create_succesfully(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
     organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
     reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
     event = create_event({'owner': organizer['id']})
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
 
     booking_body = {
         "event_id": event['id'],
@@ -122,10 +124,12 @@ def test_booking_create_succesfully():
     assert response_data == booking_body
 
 
-def test_booking_create_with_missing_data():
+def test_booking_create_with_missing_data(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
     organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
     reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
     event = create_event({'owner': organizer['id']})
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
 
     booking_body = {
         "event_id": event['id'],
@@ -149,10 +153,12 @@ def test_booking_create_with_missing_data():
             raise
 
 
-def test_booking_create_duplicated():
+def test_booking_create_duplicated(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
     organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
     reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
     event = create_event({'owner': organizer['id']})
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
 
     booking_body = {
         "event_id": event['id'],
@@ -167,11 +173,13 @@ def test_booking_create_duplicated():
     assert response_data['detail'] == "Booking already exists"
 
 
-def test_booking_create_with_2_reservers():
+def test_booking_create_with_2_reservers(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
     organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
     reserver1 = create_user({'email': 'reserver@mail.com', 'id': '234'})
     reserver2 = create_user({'email': 'reserver2@mail.com', 'id': '345'})
     event = create_event({'owner': organizer['id']})
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
 
     booking_body1 = {
         "event_id": event['id'],
@@ -210,10 +218,12 @@ def test_booking_get_by_reserver_empty():
     assert response.json() == []
 
 
-def test_booking_get_by_reserver_one():
+def test_booking_get_by_reserver_one(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
     organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
     reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
     event = create_event({'owner': organizer['id']})
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
 
     booking_body = {"event_id": event['id'], "reserver_id": reserver['id']}
 
@@ -229,11 +239,14 @@ def test_booking_get_by_reserver_one():
     assert data[0] == booking_body
 
 
-def test_booking_get_by_reserver_two():
+def test_booking_get_by_reserver_two(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
     organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
     reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
     event1 = create_event({'owner': organizer['id']})
+    client.put(f"{EVENTS_URI}/{event1['id']}/publish")
     event2 = create_event({'owner': organizer['id']})
+    client.put(f"{EVENTS_URI}/{event2['id']}/publish")
 
     booking_body1 = {"event_id": event1['id'], "reserver_id": reserver['id']}
 
@@ -256,11 +269,13 @@ def test_booking_get_by_reserver_two():
     assert data[1] == booking_body2
 
 
-def test_booking_vacants_left_is_one_less():
+def test_booking_vacants_left_is_one_less(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
     number_of_vacants = 10
     organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
     reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
     event = create_event({'owner': organizer['id'], 'vacants': number_of_vacants})
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
 
     event_id = event['id']
     booking_body = {"event_id": event_id, "reserver_id": reserver['id']}
@@ -272,12 +287,14 @@ def test_booking_vacants_left_is_one_less():
     assert data['vacants_left'] == number_of_vacants - 1
 
 
-def test_booking_vacants_left_is_two_less():
+def test_booking_vacants_left_is_two_less(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
     number_of_vacants = 10
     organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
     reserver1 = create_user({'email': 'reserver1@mail.com', 'id': '2341'})
     reserver2 = create_user({'email': 'reserver2@mail.com', 'id': '2342'})
     event = create_event({'owner': organizer['id'], 'vacants': number_of_vacants})
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
 
     event_id = event['id']
     booking_body1 = {"event_id": event_id, "reserver_id": reserver1['id']}
@@ -291,12 +308,14 @@ def test_booking_vacants_left_is_two_less():
     assert data['vacants_left'] == number_of_vacants - 2
 
 
-def test_booking_no_more_vacants():
+def test_booking_no_more_vacants(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
     number_of_vacants = 1
     organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
     reserver1 = create_user({'email': 'reserver1@mail.com', 'id': '2341'})
     reserver2 = create_user({'email': 'reserver2@mail.com', 'id': '2342'})
     event = create_event({'owner': organizer['id'], 'vacants': number_of_vacants})
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
 
     event_id = event['id']
     booking_body1 = {"event_id": event_id, "reserver_id": reserver1['id']}
@@ -309,10 +328,12 @@ def test_booking_no_more_vacants():
     assert response.json() == {'detail': 'No more vacants left'}
 
 
-def test_verify_booking():
+def test_verify_booking(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
     organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
     reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
     event = create_event({'owner': organizer['id']})
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
 
     event_id = event['id']
     booking_body = {"event_id": event_id, "reserver_id": reserver['id']}
@@ -325,9 +346,11 @@ def test_verify_booking():
     assert response.status_code == 200
 
 
-def test_verify_non_existing_booking():
+def test_verify_non_existing_booking(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
     organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
     event = create_event({'owner': organizer['id']})
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
 
     non_existing_booking_id = "123"
     event_id = event['id']
@@ -338,11 +361,14 @@ def test_verify_non_existing_booking():
     assert response.json() == {'detail': 'Booking not found'}
 
 
-def test_verify_booking_with_wrong_event_id():
+def test_verify_booking_with_wrong_event_id(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
     organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
     reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
     event = create_event({'owner': organizer['id']})
     event2 = create_event({'owner': organizer['id']})
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
+    client.put(f"{EVENTS_URI}/{event2['id']}/publish")
 
     event_id1 = event['id']
     event_id2 = event2['id']
@@ -357,10 +383,12 @@ def test_verify_booking_with_wrong_event_id():
     assert response.json() == {'detail': 'Incorrect Event'}
 
 
-def test_verify_booking_twice():
+def test_verify_booking_twice(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
     organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
     reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
     event = create_event({'owner': organizer['id']})
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
 
     event_id = event['id']
     booking_body = {"event_id": event_id, "reserver_id": reserver['id']}
@@ -373,3 +401,61 @@ def test_verify_booking_twice():
     response = client.put(URI + f'/{booking_id}/verify', json=body)
     assert response.status_code == 400
     assert response.json() == {'detail': 'Booking already verified'}
+
+
+def test_booking_with_non_published_event(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
+    event = create_event({'owner': organizer['id']})
+
+    booking_body = {
+        "event_id": event['id'],
+        "reserver_id": reserver['id'],
+    }
+
+    response = client.post(URI, json=booking_body)
+
+    assert response.status_code == 400
+    assert response.json() == {'detail': 'Event not published'}
+
+
+def test_booking_with_finished_event(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 0})
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
+    event = create_event({'owner': organizer['id'], 'date': '2020-01-01'})
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
+
+    booking_body = {
+        "event_id": event['id'],
+        "reserver_id": reserver['id'],
+    }
+
+    response = client.post(URI, json=booking_body)
+
+    assert response.status_code == 400
+    assert response.json() == {'detail': 'Event already finished'}
+
+
+def test_booking_with_finished_event_hour(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 15})
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
+    event = create_event(
+        {
+            'owner': organizer['id'],
+            'date': '2022-01-01',
+        }
+    )
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
+
+    booking_body = {
+        "event_id": event['id'],
+        "reserver_id": reserver['id'],
+    }
+
+    response = client.post(URI, json=booking_body)
+
+    assert response.status_code == 400
+    assert response.json() == {'detail': 'Event already finished'}

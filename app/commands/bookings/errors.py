@@ -23,3 +23,15 @@ class BookingAlreadyVerifiedError(BusinessError):
     def __init__(self):
         msg = "Booking already verified"
         super().__init__(msg)
+
+
+class EventNotPublishedError(BusinessError):
+    def __init__(self):
+        msg = "Event not published"
+        super().__init__(msg)
+
+
+class EventFinishedError(BusinessError):
+    def __init__(self):
+        msg = "Event already finished"
+        super().__init__(msg)
