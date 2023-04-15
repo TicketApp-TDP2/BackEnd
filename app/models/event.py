@@ -50,6 +50,10 @@ class Type(Enum):
     Convencion = "Convención"
 
 
+class State(Enum):
+    Borrador = "Borrador"
+
+
 class Event:
     def __init__(
         self,
@@ -68,6 +72,7 @@ class Event:
         vacants_left: int,
         FAQ: list[Faq],
         id: str,
+        state: State,
     ):
         self.name = name
         self.description = description
@@ -84,6 +89,7 @@ class Event:
         self.vacants_left = vacants_left
         self.FAQ = FAQ
         self.id = id
+        self.state = state
 
     @classmethod
     def new(
@@ -119,4 +125,5 @@ class Event:
             vacants=vacants,
             vacants_left=vacants_left,
             FAQ=FAQ,
+            state=State.Borrador,
         )

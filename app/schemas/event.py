@@ -2,7 +2,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 from datetime import date, time
 from typing import List, Optional, Tuple
-from app.models.event import Event, Type
+from app.models.event import Event, Type, State
 
 
 class SearchEvent(BaseModel):
@@ -57,6 +57,7 @@ class EventCreateSchema(EventSchemaBase):
 class EventSchema(EventSchemaBase):
     id: str = Field(..., min_length=1)
     vacants_left: int = Field(..., ge=0)
+    state: State
 
     @classmethod
     def from_model(cls, event: Event) -> EventSchema:
@@ -100,4 +101,5 @@ class EventSchema(EventSchemaBase):
             vacants_left=event.vacants_left,
             FAQ=faq,
             id=event.id,
+            state=State(event.state),
         )

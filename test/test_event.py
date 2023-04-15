@@ -57,6 +57,13 @@ def create_event(fields={}):
     return response.json()
 
 
+def add_event_fields(event, fields={}):
+    for k, v in fields.items():
+        event[k] = v
+
+    return event
+
+
 @pytest.fixture(autouse=True)
 def clear_db():
     # This runs before each test
@@ -201,8 +208,10 @@ def test_get_event_exists():
     response = client.post(URI, json=body)
     id = response.json()['id']
     expected_response = body.copy()
-    expected_response['id'] = id
-    expected_response['vacants_left'] = expected_response['vacants']
+    expected_response = add_event_fields(
+        expected_response,
+        {'id': id, 'vacants_left': expected_response['vacants'], 'state': 'Borrador'},
+    )
 
     response = client.get(f"{URI}/{id}")
     data = response.json()

@@ -4,7 +4,7 @@ from app.repositories.config import db
 from pymongo import GEOSPHERE
 from bson.son import SON
 from abc import ABC, abstractmethod
-from app.models.event import Type, Event, Location, Agenda, Faq
+from app.models.event import Type, Event, Location, Agenda, Faq, State
 from app.repositories.errors import EventNotFoundError
 from datetime import date, time
 
@@ -167,6 +167,7 @@ class PersistentEventRepository(EventRepository):
             'vacants_left': event.vacants_left,
             'FAQ': serialized_faq,
             '_id': event.id,
+            'state': event.state.value,
         }
 
         return serialized
@@ -218,4 +219,5 @@ class PersistentEventRepository(EventRepository):
             vacants=data['vacants'],
             vacants_left=data['vacants_left'],
             FAQ=deserialized_faq,
+            state=State(data['state']),
         )
