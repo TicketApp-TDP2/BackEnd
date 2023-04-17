@@ -675,3 +675,41 @@ def test_search_event_finished_hour(monkeypatch):
     assert len(data) == 1
     assert data[0]['name'] == event['name']
     assert data[0]['state'] == "Finalizado"
+
+
+def test_max_event_images():
+    images = ["image" + str(i) for i in range(1, 11)]
+    event_body = create_event_body({"images": images})
+    response = client.post(URI, json=event_body)
+    data = response.json()
+    assert response.status_code == 400
+    assert data['detail'] == 'Max number of images is 10'
+
+
+def test_max_minus_one_event_images():
+    images = ["image" + str(i) for i in range(1, 10)]
+    event_body = create_event_body({"images": images})
+    response = client.post(URI, json=event_body)
+    assert response.status_code == 201
+
+
+def test_max_event_faqs():
+    faqs = [
+        {"question": "question" + str(i), "answer": "answer" + str(i)}
+        for i in range(1, 32)
+    ]
+    event_body = create_event_body({"FAQ": faqs})
+    response = client.post(URI, json=event_body)
+    data = response.json()
+    assert response.status_code == 400
+    assert data['detail'] == 'Max number of faqs is 30'
+
+
+def test_max_minus_one_event_faqs():
+    faqs = [
+        {"question": "question" + str(i), "answer": "answer" + str(i)}
+        for i in range(1, 31)
+    ]
+    event_body = create_event_body({"FAQ": faqs})
+    response = client.post(URI, json=event_body)
+    assert response.status_code == 201

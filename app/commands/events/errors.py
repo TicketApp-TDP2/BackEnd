@@ -41,3 +41,15 @@ class EventNotBorradorError(BusinessError):
     def __init__(self):
         msg = "Event is not in Borrador state"
         super().__init__(msg)
+
+
+class TooManyImagesError(BusinessError):
+    def __init__(self):
+        msg = "Max number of images is 10"
+        super().__init__(msg)
+
+
+class TooManyFaqsError(BusinessError):
+    def __init__(self):
+        msg = "Max number of faqs is 30"
+        super().__init__(msg)

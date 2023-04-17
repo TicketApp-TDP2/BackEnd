@@ -13,6 +13,8 @@ from .errors import (
     AgendaOverlapError,
     AgendaTooLargeError,
     EventNotBorradorError,
+    TooManyImagesError,
+    TooManyFaqsError,
 )
 from app.repositories.event import (
     EventRepository,
@@ -58,6 +60,8 @@ class CreateEventCommand:
             )
             for element in self.event_data.FAQ
         ]
+        if len(faq) > 30:
+            raise TooManyFaqsError
 
         event = Event.new(
             name=self.event_data.name,
@@ -79,6 +83,8 @@ class CreateEventCommand:
         already_exists = self.event_repository.event_exists(event.id)
         if already_exists:
             raise EventAlreadyExistsError
+        if len(event.images) > 9:
+            raise TooManyImagesError
         event = self.event_repository.add_event(event)
 
         return EventSchema.from_model(event)
