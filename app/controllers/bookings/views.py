@@ -40,7 +40,10 @@ async def create_booking(booking_body: BookingCreateSchema):
 async def verify_booking(id: str, verify_body: verifyBookingSchema):
     try:
         repository = PersistentBookingRepository()
-        booking = VerifyBookingCommand(repository, id, verify_body.event_id).execute()
+        event_repository = PersistentEventRepository()
+        booking = VerifyBookingCommand(
+            repository, event_repository, id, verify_body.event_id
+        ).execute()
     except TicketAppError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:

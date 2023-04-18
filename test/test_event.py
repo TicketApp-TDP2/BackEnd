@@ -211,7 +211,12 @@ def test_get_event_exists():
     expected_response = body.copy()
     expected_response = add_event_fields(
         expected_response,
-        {'id': id, 'vacants_left': expected_response['vacants'], 'state': 'Borrador'},
+        {
+            'id': id,
+            'vacants_left': expected_response['vacants'],
+            'state': 'Borrador',
+            'verified_vacants': 0,
+        },
     )
 
     response = client.get(f"{URI}/{id}")

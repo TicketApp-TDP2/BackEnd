@@ -74,18 +74,27 @@ class GetBookingsByReserverCommand:
 
 class VerifyBookingCommand:
     def __init__(
-        self, booking_repository: BookingRepository, booking_id: str, event_id: str
+        self,
+        booking_repository: BookingRepository,
+        event_repository: EventRepository,
+        booking_id: str,
+        event_id: str,
     ):
         self.booking_repository = booking_repository
         self.booking_id = booking_id
         self.event_id = event_id
+        self.event_repository = event_repository
 
     def execute(self) -> BookingSchema:
         booking = self.booking_repository.get_booking(self.booking_id)
         if booking.event_id != self.event_id:
             raise IncorrectEventError
-        if not booking.verified:
-            booking = self.booking_repository.verify_booking(self.booking_id)
-        else:
+        if booking.verified:
             raise BookingAlreadyVerifiedError
+        booking = self.booking_repository.verify_booking(self.booking_id)
+        event = self.event_repository.get_event(self.event_id)
+        self.event_repository.update_verified_vacants(
+            self.event_id, event.verified_vacants + 1
+        )
+
         return BookingSchema.from_model(booking)

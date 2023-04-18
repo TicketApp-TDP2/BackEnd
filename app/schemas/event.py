@@ -60,6 +60,7 @@ class EventSchema(EventSchemaBase):
     id: str = Field(..., min_length=1)
     vacants_left: int = Field(..., ge=0)
     state: State
+    verified_vacants: int
 
     @classmethod
     def from_model(cls, event: Event) -> EventSchema:
@@ -104,4 +105,5 @@ class EventSchema(EventSchemaBase):
             FAQ=faq,
             id=event.id,
             state=State(event.state),
+            verified_vacants=event.verified_vacants,
         )

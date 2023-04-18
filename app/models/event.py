@@ -76,6 +76,7 @@ class Event:
         FAQ: list[Faq],
         id: str,
         state: State,
+        verified_vacants: int,
     ):
         self.name = name
         self.description = description
@@ -93,6 +94,7 @@ class Event:
         self.FAQ = FAQ
         self.id = id
         self.state = state
+        self.verified_vacants = verified_vacants
 
     @classmethod
     def new(
@@ -129,4 +131,5 @@ class Event:
             vacants_left=vacants_left,
             FAQ=FAQ,
             state=State.Borrador,
+            verified_vacants=0,
         )
