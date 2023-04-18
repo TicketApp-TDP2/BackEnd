@@ -165,3 +165,16 @@ class PublishEventCommand:
         else:
             raise EventNotBorradorError
         return EventSchema.from_model(event)
+
+
+class CancelEventCommand:
+    def __init__(self, event_repository: EventRepository, _id: str):
+        self.event_repository = event_repository
+        self.id = _id
+
+    def execute(self) -> EventSchema:
+        exists = self.event_repository.event_exists(self.id)
+        if not exists:
+            raise EventNotFoundError
+        event = self.event_repository.update_state_event(self.id, State.Cancelado)
+        return EventSchema.from_model(event)

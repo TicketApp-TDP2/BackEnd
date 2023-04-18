@@ -713,3 +713,26 @@ def test_max_minus_one_event_faqs():
     event_body = create_event_body({"FAQ": faqs})
     response = client.post(URI, json=event_body)
     assert response.status_code == 201
+
+
+def test_cancel_event(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+    event = create_event({"date": "2024-02-02"})
+    response = client.put(f"{URI}/{event['id']}/cancel")
+    assert response.status_code == 200
+    assert response.json()['state'] == 'Cancelado'
+
+
+def test_cancel_published_event(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+    event = create_event({"date": "2024-02-02"})
+    client.put(f"{URI}/{event['id']}/publish")
+    response = client.put(f"{URI}/{event['id']}/cancel")
+    assert response.status_code == 200
+    assert response.json()['state'] == 'Cancelado'
+
+
+def test_cancel_non_existing_event():
+    response = client.put(f"{URI}/1/cancel")
+    assert response.status_code == 400
+    assert response.json()['detail'] == 'Event not found'

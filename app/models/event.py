@@ -54,6 +54,7 @@ class State(Enum):
     Borrador = "Borrador"
     Publicado = "Publicado"
     Finalizado = "Finalizado"
+    Cancelado = "Cancelado"
 
 
 class Event:
