@@ -11,7 +11,7 @@ class SearchEvent(BaseModel):
     dist: int = Field(default=5_000)
     organizer: Optional[str]
     type: Optional[Type]
-    limit: int = Field(default=5)
+    limit: int = Field(default=5000)
     name: Optional[str]
     only_published: Optional[bool]
     not_finished: Optional[bool]
