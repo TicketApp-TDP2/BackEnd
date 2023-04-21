@@ -170,7 +170,7 @@ def test_booking_create_duplicated(monkeypatch):
     response_data = response.json()
 
     assert response.status_code == 400
-    assert response_data['detail'] == "Booking already exists"
+    assert response_data['detail'] == "booking_already_exists"
 
 
 def test_booking_create_with_2_reservers(monkeypatch):
@@ -325,7 +325,7 @@ def test_booking_no_more_vacants(monkeypatch):
     response = client.post(URI, json=booking_body2)
 
     assert response.status_code == 400
-    assert response.json() == {'detail': 'No more vacants left'}
+    assert response.json() == {'detail': 'no_more_vacants_left'}
 
 
 def test_verify_booking(monkeypatch):
@@ -358,7 +358,7 @@ def test_verify_non_existing_booking(monkeypatch):
 
     response = client.put(URI + f'/{non_existing_booking_id}/verify', json=body)
     assert response.status_code == 400
-    assert response.json() == {'detail': 'Booking not found'}
+    assert response.json() == {'detail': 'booking_not_found'}
 
 
 def test_verify_booking_with_wrong_event_id(monkeypatch):
@@ -380,7 +380,7 @@ def test_verify_booking_with_wrong_event_id(monkeypatch):
     body = {"event_id": event_id2}
     response = client.put(URI + f'/{booking_id}/verify', json=body)
     assert response.status_code == 400
-    assert response.json() == {'detail': 'Incorrect Event'}
+    assert response.json() == {'detail': 'incorrect_event'}
 
 
 def test_verify_booking_twice(monkeypatch):
@@ -400,7 +400,7 @@ def test_verify_booking_twice(monkeypatch):
     client.put(URI + f'/{booking_id}/verify', json=body)
     response = client.put(URI + f'/{booking_id}/verify', json=body)
     assert response.status_code == 400
-    assert response.json() == {'detail': 'Booking already verified'}
+    assert response.json() == {'detail': 'booking_already_verified'}
 
 
 def test_booking_with_non_published_event(monkeypatch):
@@ -417,7 +417,7 @@ def test_booking_with_non_published_event(monkeypatch):
     response = client.post(URI, json=booking_body)
 
     assert response.status_code == 400
-    assert response.json() == {'detail': 'Event not published'}
+    assert response.json() == {'detail': 'event_not_published'}
 
 
 def test_booking_with_finished_event(monkeypatch):
@@ -435,7 +435,7 @@ def test_booking_with_finished_event(monkeypatch):
     response = client.post(URI, json=booking_body)
 
     assert response.status_code == 400
-    assert response.json() == {'detail': 'Event already finished'}
+    assert response.json() == {'detail': 'event_already_finished'}
 
 
 def test_booking_with_finished_event_hour(monkeypatch):
@@ -458,7 +458,7 @@ def test_booking_with_finished_event_hour(monkeypatch):
     response = client.post(URI, json=booking_body)
 
     assert response.status_code == 400
-    assert response.json() == {'detail': 'Event already finished'}
+    assert response.json() == {'detail': 'event_already_finished'}
 
 
 def test_event_has_0_verified_after_booking(monkeypatch):

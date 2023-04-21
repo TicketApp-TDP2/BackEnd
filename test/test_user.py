@@ -23,7 +23,7 @@ def test_get_user_not_exists():
     response = client.get(URI + "/notexists")
     data = response.json()
     assert response.status_code == 404
-    assert data['detail'] == "User not found"
+    assert data['detail'] == "user_not_found"
 
 
 def create_user_body(fields={}):
@@ -34,7 +34,7 @@ def create_user_body(fields={}):
         'identification_number': '40400400',
         'phone_number': '1180808080',
         "birth_date": "1990-01-01",
-        "id":"784578"
+        "id": "784578",
     }
 
     for k, v in fields.items():
@@ -63,7 +63,7 @@ def test_user_create_existing_user_fails():
 
     data = response.json()
     assert response.status_code == 400
-    assert data['detail'] == "User already exists"
+    assert data['detail'] == "user_already_exists"
 
 
 def test_user_create_wrong_body():

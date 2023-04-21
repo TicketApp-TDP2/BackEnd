@@ -201,7 +201,7 @@ def test_get_event_not_exists():
     response = client.get(URI + "/notexists")
     data = response.json()
     assert response.status_code == 404
-    assert data['detail'] == "Event not found"
+    assert data['detail'] == "event_not_found"
 
 
 def test_get_event_exists():
@@ -425,7 +425,7 @@ def test_create_event_with_empty_space_in_agenda():
     response = client.post(URI, json=body)
     data = response.json()
     assert response.status_code == 400
-    assert data['detail'] == 'Agenda can not have empty spaces'
+    assert data['detail'] == 'agenda_can_not_have_empty_spaces'
 
 
 def test_create_event_empty_agenda():
@@ -433,7 +433,7 @@ def test_create_event_empty_agenda():
     response = client.post(URI, json=body)
     data = response.json()
     assert response.status_code == 400
-    assert data['detail'] == 'Agenda can not be empty'
+    assert data['detail'] == 'agenda_can_not_be_empty'
 
 
 def test_create_event_with_overlap_in_agenda():
@@ -460,7 +460,7 @@ def test_create_event_with_overlap_in_agenda():
     response = client.post(URI, json=body)
     data = response.json()
     assert response.status_code == 400
-    assert data['detail'] == 'Agenda can not have overlap'
+    assert data['detail'] == 'agenda_can_not_have_overlap'
 
 
 def test_create_event_with_agenda_ending_after_event():
@@ -487,7 +487,7 @@ def test_create_event_with_agenda_ending_after_event():
     response = client.post(URI, json=body)
     data = response.json()
     assert response.status_code == 400
-    assert data['detail'] == 'Agenda can not end after event end'
+    assert data['detail'] == 'agenda_can_not_end_after_event_end'
 
 
 def test_create_event_has_vacants_left():
@@ -517,14 +517,14 @@ def test_publish_event_twice():
     response = client.put(f"{URI}/{event['id']}/publish")
     data = response.json()
     assert response.status_code == 400
-    assert data['detail'] == 'Event is not in Borrador state'
+    assert data['detail'] == 'event_is_not_in_borrador_statee'
 
 
 def test_publish_non_existing_event():
     response = client.put(f"{URI}/1/publish")
     data = response.json()
     assert response.status_code == 400
-    assert data['detail'] == 'Event not found'
+    assert data['detail'] == 'event_not_found'
 
 
 def test_search_event_only_pusblished():
@@ -688,7 +688,7 @@ def test_max_event_images():
     response = client.post(URI, json=event_body)
     data = response.json()
     assert response.status_code == 400
-    assert data['detail'] == 'Max number of images is 10'
+    assert data['detail'] == 'max_number_of_images_is_10'
 
 
 def test_max_minus_one_event_images():
@@ -707,7 +707,7 @@ def test_max_event_faqs():
     response = client.post(URI, json=event_body)
     data = response.json()
     assert response.status_code == 400
-    assert data['detail'] == 'Max number of faqs is 30'
+    assert data['detail'] == 'max_number_of_faqs_is_30'
 
 
 def test_max_minus_one_event_faqs():
@@ -740,4 +740,4 @@ def test_cancel_published_event(monkeypatch):
 def test_cancel_non_existing_event():
     response = client.put(f"{URI}/1/cancel")
     assert response.status_code == 400
-    assert response.json()['detail'] == 'Event not found'
+    assert response.json()['detail'] == 'event_not_found'

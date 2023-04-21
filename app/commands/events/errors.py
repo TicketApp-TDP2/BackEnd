@@ -3,53 +3,53 @@ from app.models.errors import BusinessError
 
 class EventNotFoundError(BusinessError):
     def __init__(self):
-        msg = "Event not found"
+        msg = "event_not_found"
         super().__init__(msg)
 
 
 class EventAlreadyExistsError(BusinessError):
     def __init__(self):
-        msg = "Event already exists"
+        msg = "event_already_exists"
         super().__init__(msg)
 
 
 class AgendaEmptyError(BusinessError):
     def __init__(self):
-        msg = "Agenda can not be empty"
+        msg = "agenda_can_not_be_empty"
         super().__init__(msg)
 
 
 class AgendaEmptySpaceError(BusinessError):
     def __init__(self):
-        msg = "Agenda can not have empty spaces"
+        msg = "agenda_can_not_have_empty_spaces"
         super().__init__(msg)
 
 
 class AgendaOverlapError(BusinessError):
     def __init__(self):
-        msg = "Agenda can not have overlap"
+        msg = "agenda_can_not_have_overlap"
         super().__init__(msg)
 
 
 class AgendaTooLargeError(BusinessError):
     def __init__(self):
-        msg = "Agenda can not end after event end"
+        msg = "agenda_can_not_end_after_event_end"
         super().__init__(msg)
 
 
 class EventNotBorradorError(BusinessError):
     def __init__(self):
-        msg = "Event is not in Borrador state"
+        msg = "event_is_not_in_borrador_statee"
         super().__init__(msg)
 
 
 class TooManyImagesError(BusinessError):
     def __init__(self):
-        msg = "Max number of images is 10"
+        msg = "max_number_of_images_is_10"
         super().__init__(msg)
 
 
 class TooManyFaqsError(BusinessError):
     def __init__(self):
-        msg = "Max number of faqs is 30"
+        msg = "max_number_of_faqs_is_30"
         super().__init__(msg)

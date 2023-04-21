@@ -8,5 +8,5 @@ class ParserError(TicketAppError):
 
 class LocationIncompleteError(ParserError):
     def __init__(self):
-        msg = "Location incomplete in search"
+        msg = "location_incomplete_in_search"
         super().__init__(msg)
