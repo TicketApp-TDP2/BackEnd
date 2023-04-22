@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
-from app.config.constants import DB_URL, DB_NAME, ENV_NAME, IMAGES_PATH
+from app.config.constants import DB_URL, DB_NAME, ENV_NAME
 from app.config.logger import setup_logger
 from pymongo_inmemory import MongoClient as MemoryMongoClient
 from pathlib import Path
@@ -32,8 +32,3 @@ def clear_db():
     # Clear MongoDB
     for name in db.list_collection_names():
         db.drop_collection(name)
-
-    # Clear images DB
-    image_path = Path(IMAGES_PATH)
-    if image_path.exists() and image_path.is_dir():
-        shutil.rmtree(image_path)

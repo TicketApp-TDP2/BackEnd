@@ -80,7 +80,7 @@ def test_user_not_exists():
     response = client.get(favourites_uri('notexists'))
     data = response.json()
     assert response.status_code == 400
-    assert data['detail'] == "User not found"
+    assert data['detail'] == "user_not_found"
 
 
 def test_user_without_favourites():
@@ -177,7 +177,7 @@ def test_create_favourite_user_not_exists():
     data = response.json()
 
     assert response.status_code == 400
-    assert data['detail'] == 'User not found'
+    assert data['detail'] == 'user_not_found'
 
 
 def test_create_favourite_event_not_exists():
@@ -191,7 +191,7 @@ def test_create_favourite_event_not_exists():
     data = response.json()
 
     assert response.status_code == 400
-    assert data['detail'] == 'Event not found'
+    assert data['detail'] == 'event_not_found'
 
 
 def test_delete_favourite_returns_empty_array():
@@ -264,7 +264,7 @@ def test_delete_favourite_user_not_exist():
     data = response.json()
 
     assert response.status_code == 400
-    assert data['detail'] == 'User not found'
+    assert data['detail'] == 'user_not_found'
 
 
 def test_delete_favourite_favourite_not_exist_is_ignored():

@@ -23,7 +23,7 @@ def test_get_organizer_not_exists():
     response = client.get(URI + "/notexists")
     data = response.json()
     assert response.status_code == 404
-    assert data['detail'] == "Organizer not found"
+    assert data['detail'] == "organizer_not_found"
 
 
 def create_organizer_body(fields={}):
@@ -63,7 +63,7 @@ def test_organizer_create_existing_organizer_fails():
 
     data = response.json()
     assert response.status_code == 400
-    assert data['detail'] == "Organizer already exists"
+    assert data['detail'] == "organizer_already_exists"
 
 
 def test_organizer_create_wrong_body():

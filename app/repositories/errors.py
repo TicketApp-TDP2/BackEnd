@@ -8,23 +8,23 @@ class RepositoryError(TicketAppError):
 
 class UserNotFoundError(RepositoryError):
     def __init__(self):
-        msg = "User not found"
+        msg = "user_not_found"
         super().__init__(msg)
 
 
 class OrganizerNotFoundError(RepositoryError):
     def __init__(self):
-        msg = "Organizer not found"
+        msg = "organizer_not_found"
         super().__init__(msg)
 
 
 class EventNotFoundError(RepositoryError):
     def __init__(self):
-        msg = "Event not found"
+        msg = "event_not_found"
         super().__init__(msg)
 
 
-class ImageNotFoundError(RepositoryError):
+class BookingNotFoundError(RepositoryError):
     def __init__(self):
-        msg = "Image not found"
+        msg = "booking_not_found"
         super().__init__(msg)

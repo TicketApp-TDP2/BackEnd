@@ -2,7 +2,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 from datetime import date, time
 from typing import List, Optional, Tuple
-from app.models.event import Event, Type
+from app.models.event import Event, Type, State
 
 
 class SearchEvent(BaseModel):
@@ -11,8 +11,10 @@ class SearchEvent(BaseModel):
     dist: int = Field(default=5_000)
     organizer: Optional[str]
     type: Optional[Type]
-    limit: int = Field(default=5)
+    limit: int = Field(default=5000)
     name: Optional[str]
+    only_published: Optional[bool]
+    not_finished: Optional[bool]
 
 
 class LocationSchema(BaseModel):
@@ -56,6 +58,9 @@ class EventCreateSchema(EventSchemaBase):
 
 class EventSchema(EventSchemaBase):
     id: str = Field(..., min_length=1)
+    vacants_left: int = Field(..., ge=0)
+    state: State
+    verified_vacants: int
 
     @classmethod
     def from_model(cls, event: Event) -> EventSchema:
@@ -96,6 +101,9 @@ class EventSchema(EventSchemaBase):
             organizer=event.organizer,
             agenda=agenda,
             vacants=event.vacants,
+            vacants_left=event.vacants_left,
             FAQ=faq,
             id=event.id,
+            state=State(event.state),
+            verified_vacants=event.verified_vacants,
         )

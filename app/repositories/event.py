@@ -4,10 +4,10 @@ from app.repositories.config import db
 from pymongo import GEOSPHERE
 from bson.son import SON
 from abc import ABC, abstractmethod
-from app.models.event import Type, Event, Location, Agenda, Faq
+from app.models.event import Type, Event, Location, Agenda, Faq, State
 from app.repositories.errors import EventNotFoundError
 from datetime import date, time
-
+import datetime
 
 EARTH_RADIUS_METERS = 6_371_000
 
@@ -27,12 +27,16 @@ class Search:
         location: Optional[SearchLocation],
         limit: int,
         name: str,
+        only_published: bool,
+        not_finished: bool,
     ):
         self.organizer = organizer
         self.type = type
         self.location = location
         self.limit = limit
         self.name = name
+        self.only_published = only_published
+        self.not_finished = not_finished
 
 
 class EventRepository(ABC):
@@ -54,6 +58,18 @@ class EventRepository(ABC):
 
     @abstractmethod
     def get_events_by_id(self, ids: List[str]) -> List[Event]:
+        pass
+
+    @abstractmethod
+    def update_vacants_left_event(self, id: str, vacants_left: int) -> Event:
+        pass
+
+    @abstractmethod
+    def update_state_event(self, id: str, state: State) -> Event:
+        pass
+
+    @abstractmethod
+    def update_verified_vacants(self, id: str, verified_vacants: int) -> Event:
         pass
 
 
@@ -87,6 +103,27 @@ class PersistentEventRepository(EventRepository):
         events = self.events.find({'_id': {'$in': ids}})
         return list(map(self.__deserialize_event, events))
 
+    def update_vacants_left_event(self, id: str, vacants_left: int) -> Event:
+        event = self.get_event(id)
+        event.vacants_left = vacants_left
+        data = self.__serialize_event(event)
+        self.events.update_one({'_id': id}, {'$set': data})
+        return event
+
+    def update_state_event(self, id: str, state: State) -> Event:
+        event = self.get_event(id)
+        event.state = state
+        data = self.__serialize_event(event)
+        self.events.update_one({'_id': id}, {'$set': data})
+        return event
+
+    def update_verified_vacants(self, id: str, verified_vacants: int) -> Event:
+        event = self.get_event(id)
+        event.verified_vacants = verified_vacants
+        data = self.__serialize_event(event)
+        self.events.update_one({'_id': id}, {'$set': data})
+        return event
+
     def __serialize_search(self, search: Search) -> dict:
         srch = {
             'organizer': search.organizer,
@@ -95,6 +132,25 @@ class PersistentEventRepository(EventRepository):
 
         if search.name:
             srch['name'] = {'$regex': search.name, '$options': 'i'}
+
+        if search.only_published:
+            srch['state'] = State.Publicado.value
+
+        if search.not_finished:
+            now = datetime.datetime.now()
+            srch['$or'] = [
+                {
+                    '$and': [
+                        {'date': {'$gt': now.date().isoformat()}},
+                    ]
+                },
+                {
+                    '$and': [
+                        {'date': {'$eq': now.date().isoformat()}},
+                        {'end_time': {'$gt': now.time().isoformat()}},
+                    ]
+                },
+            ]
 
         if search.location:
             lng = search.location.lng
@@ -133,7 +189,6 @@ class PersistentEventRepository(EventRepository):
         return serialized_faq
 
     def __serialize_event(self, event: Event) -> dict:
-
         serialized_agenda = self.__serialize_agenda(event.agenda)
         serialized_faq = self.__serialize_faq(event.FAQ)
 
@@ -154,8 +209,11 @@ class PersistentEventRepository(EventRepository):
             'organizer': event.organizer,
             'agenda': serialized_agenda,
             'vacants': event.vacants,
+            'vacants_left': event.vacants_left,
             'FAQ': serialized_faq,
             '_id': event.id,
+            'state': event.state.value,
+            'verified_vacants': event.verified_vacants,
         }
 
         return serialized
@@ -184,7 +242,6 @@ class PersistentEventRepository(EventRepository):
         return deserialized_faq
 
     def __deserialize_event(self, data: dict) -> Event:
-
         deserialized_agenda = self.__deserialize_agenda(data['agenda'])
         deserialized_faq = self.__deserialize_faq(data['FAQ'])
 
@@ -206,5 +263,8 @@ class PersistentEventRepository(EventRepository):
             organizer=data['organizer'],
             agenda=deserialized_agenda,
             vacants=data['vacants'],
+            vacants_left=data['vacants_left'],
             FAQ=deserialized_faq,
+            state=State(data['state']),
+            verified_vacants=data['verified_vacants'],
         )

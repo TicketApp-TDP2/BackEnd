@@ -1,6 +1,6 @@
 import json
 from typing import List
-from app.models.event import Agenda, Event, Faq, Location
+from app.models.event import Agenda, Event, Faq, Location, State
 from app.schemas.event import (
     EventCreateSchema,
     EventSchema,
@@ -12,6 +12,9 @@ from .errors import (
     AgendaEmptySpaceError,
     AgendaOverlapError,
     AgendaTooLargeError,
+    EventNotBorradorError,
+    TooManyImagesError,
+    TooManyFaqsError,
 )
 from app.repositories.event import (
     EventRepository,
@@ -19,6 +22,7 @@ from app.repositories.event import (
 )
 from app.config.logger import setup_logger
 from datetime import time
+import datetime
 
 logger = setup_logger(__name__)
 
@@ -56,6 +60,8 @@ class CreateEventCommand:
             )
             for element in self.event_data.FAQ
         ]
+        if len(faq) > 30:
+            raise TooManyFaqsError
 
         event = Event.new(
             name=self.event_data.name,
@@ -70,12 +76,15 @@ class CreateEventCommand:
             end_time=self.event_data.end_time,
             agenda=agenda,
             vacants=self.event_data.vacants,
+            vacants_left=self.event_data.vacants,
             FAQ=faq,
         )
         self.verify_agenda(agenda, event.end_time)
         already_exists = self.event_repository.event_exists(event.id)
         if already_exists:
             raise EventAlreadyExistsError
+        if len(event.images) > 9:
+            raise TooManyImagesError
         event = self.event_repository.add_event(event)
 
         return EventSchema.from_model(event)
@@ -122,5 +131,50 @@ class SearchEventsCommand:
 
     def execute(self) -> List[EventSchema]:
         events = self.event_repository.search_events(self.search)
-        events_ordered = sorted(events, key=lambda h: (h.vacants), reverse=False)
+        events_with_finished = self.check_finished(events)
+        events_ordered = sorted(
+            events_with_finished, key=lambda h: (h.vacants), reverse=False
+        )
         return list(map(EventSchema.from_model, events_ordered))
+
+    def check_finished(self, events: List[Event]) -> List[Event]:
+        now = datetime.datetime.now().date()
+        time = datetime.datetime.now().time()
+        new_events = []
+        for event in events:
+            if event.date < now or (event.date == now and event.end_time < time):
+                event = self.event_repository.update_state_event(
+                    event.id, State.Finalizado
+                )
+            new_events.append(event)
+        return new_events
+
+
+class PublishEventCommand:
+    def __init__(self, event_repository: EventRepository, _id: str):
+        self.event_repository = event_repository
+        self.id = _id
+
+    def execute(self) -> EventSchema:
+        exists = self.event_repository.event_exists(self.id)
+        if not exists:
+            raise EventNotFoundError
+        event = self.event_repository.get_event(self.id)
+        if event.state == State.Borrador:
+            event = self.event_repository.update_state_event(self.id, State.Publicado)
+        else:
+            raise EventNotBorradorError
+        return EventSchema.from_model(event)
+
+
+class CancelEventCommand:
+    def __init__(self, event_repository: EventRepository, _id: str):
+        self.event_repository = event_repository
+        self.id = _id
+
+    def execute(self) -> EventSchema:
+        exists = self.event_repository.event_exists(self.id)
+        if not exists:
+            raise EventNotFoundError
+        event = self.event_repository.update_state_event(self.id, State.Cancelado)
+        return EventSchema.from_model(event)

@@ -3,7 +3,8 @@ from pprint import pprint
 import pytest
 
 from app.app import app
-from test.utils import generate_invalid
+from test.utils import generate_invalid, mock_date
+import datetime
 
 client = TestClient(app)
 
@@ -55,6 +56,13 @@ def create_event(fields={}):
     body = create_event_body(fields)
     response = client.post(URI, json=body)
     return response.json()
+
+
+def add_event_fields(event, fields={}):
+    for k, v in fields.items():
+        event[k] = v
+
+    return event
 
 
 @pytest.fixture(autouse=True)
@@ -193,7 +201,7 @@ def test_get_event_not_exists():
     response = client.get(URI + "/notexists")
     data = response.json()
     assert response.status_code == 404
-    assert data['detail'] == "Event not found"
+    assert data['detail'] == "event_not_found"
 
 
 def test_get_event_exists():
@@ -201,7 +209,15 @@ def test_get_event_exists():
     response = client.post(URI, json=body)
     id = response.json()['id']
     expected_response = body.copy()
-    expected_response['id'] = id
+    expected_response = add_event_fields(
+        expected_response,
+        {
+            'id': id,
+            'vacants_left': expected_response['vacants'],
+            'state': 'Borrador',
+            'verified_vacants': 0,
+        },
+    )
 
     response = client.get(f"{URI}/{id}")
     data = response.json()
@@ -409,7 +425,7 @@ def test_create_event_with_empty_space_in_agenda():
     response = client.post(URI, json=body)
     data = response.json()
     assert response.status_code == 400
-    assert data['detail'] == 'Agenda can not have empty spaces'
+    assert data['detail'] == 'agenda_can_not_have_empty_spaces'
 
 
 def test_create_event_empty_agenda():
@@ -417,7 +433,7 @@ def test_create_event_empty_agenda():
     response = client.post(URI, json=body)
     data = response.json()
     assert response.status_code == 400
-    assert data['detail'] == 'Agenda can not be empty'
+    assert data['detail'] == 'agenda_can_not_be_empty'
 
 
 def test_create_event_with_overlap_in_agenda():
@@ -444,7 +460,7 @@ def test_create_event_with_overlap_in_agenda():
     response = client.post(URI, json=body)
     data = response.json()
     assert response.status_code == 400
-    assert data['detail'] == 'Agenda can not have overlap'
+    assert data['detail'] == 'agenda_can_not_have_overlap'
 
 
 def test_create_event_with_agenda_ending_after_event():
@@ -471,4 +487,257 @@ def test_create_event_with_agenda_ending_after_event():
     response = client.post(URI, json=body)
     data = response.json()
     assert response.status_code == 400
-    assert data['detail'] == 'Agenda can not end after event end'
+    assert data['detail'] == 'agenda_can_not_end_after_event_end'
+
+
+def test_create_event_has_vacants_left():
+    number_of_vacants = 10
+    body = create_event_body(
+        {
+            "vacants": number_of_vacants,
+        }
+    )
+    response = client.post(URI, json=body)
+    data = response.json()
+    assert response.status_code == 201
+    assert data['vacants_left'] == number_of_vacants
+
+
+def test_publish_event():
+    event = create_event()
+    response = client.put(f"{URI}/{event['id']}/publish")
+    data = response.json()
+    assert response.status_code == 200
+    assert data['state'] == 'Publicado'
+
+
+def test_publish_event_twice():
+    event = create_event()
+    client.put(f"{URI}/{event['id']}/publish")
+    response = client.put(f"{URI}/{event['id']}/publish")
+    data = response.json()
+    assert response.status_code == 400
+    assert data['detail'] == 'event_is_not_in_borrador_statee'
+
+
+def test_publish_non_existing_event():
+    response = client.put(f"{URI}/1/publish")
+    data = response.json()
+    assert response.status_code == 400
+    assert data['detail'] == 'event_not_found'
+
+
+def test_search_event_only_pusblished():
+    event1 = create_event({"name": "event1"})
+    event2 = create_event({"name": "event2"})
+    event3 = create_event({"name": "event3"})
+
+    client.put(f"{URI}/{event1['id']}/publish")
+    client.put(f"{URI}/{event2['id']}/publish")
+
+    response = client.get(f"{URI}?only_published=True")
+    data = response.json()
+
+    data_names = map(lambda e: e['name'], data)
+
+    assert len(data) == 2
+    assert all(map(lambda e: e['name'] in data_names, [event1, event2]))
+    assert not any(map(lambda e: e['name'] in data_names, [event3]))
+
+
+def test_search_event_published_false():
+    event1 = create_event({"name": "event1"})
+    event2 = create_event({"name": "event2"})
+    event3 = create_event({"name": "event3"})
+
+    client.put(f"{URI}/{event1['id']}/publish")
+    client.put(f"{URI}/{event2['id']}/publish")
+
+    response = client.get(f"{URI}?only_published=False")
+    data = response.json()
+
+    data_names = map(lambda e: e['name'], data)
+
+    assert len(data) == 3
+    assert all(map(lambda e: e['name'] in data_names, [event1, event2, event3]))
+
+
+def test_search_event_published_incorrect_value():
+    response = client.get(f"{URI}?only_published=Fals")
+    assert response.status_code == 422
+    assert (
+        response.json()['detail'][0]["msg"] == 'value could not be parsed to a boolean'
+    )
+
+
+def test_date(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 4, "day": 12, "hour": 1})
+    assert datetime.datetime.now() == datetime.datetime(2023, 4, 12, 1)
+
+
+def test_search_events_not_finished(monkeypatch):
+    mock_date(monkeypatch, {"year": 2021, "month": 1, "day": 2, "hour": 1})
+    event1 = create_event({"name": "event1", "date": "2021-01-01"})
+    event2 = create_event({"name": "event2", "date": "2021-01-03"})
+    event3 = create_event({"name": "event3", "date": "2024-01-04"})
+
+    response = client.get(f"{URI}?not_finished=True")
+    data = response.json()
+
+    data_names = map(lambda e: e['name'], data)
+
+    assert len(data) == 2
+    assert all(map(lambda e: e['name'] in data_names, [event2, event3]))
+    assert not any(map(lambda e: e['name'] in data_names, [event1]))
+
+
+def test_search_events_not_finished_false(monkeypatch):
+    mock_date(monkeypatch, {"year": 2021, "month": 1, "day": 2, "hour": 1})
+    event1 = create_event({"name": "event1", "date": "2021-01-01"})
+    event2 = create_event({"name": "event2", "date": "2021-01-03"})
+    event3 = create_event({"name": "event3", "date": "2024-01-04"})
+
+    response = client.get(f"{URI}?not_finished=False")
+    data = response.json()
+
+    data_names = map(lambda e: e['name'], data)
+
+    assert len(data) == 3
+    assert all(map(lambda e: e['name'] in data_names, [event1, event2, event3]))
+
+
+def test_search_events_not_finished_2(monkeypatch):
+    mock_date(monkeypatch, {"year": 2021, "month": 1, "day": 2, "hour": 1})
+    event1 = create_event({"name": "event1", "date": "2020-01-01"})
+    event2 = create_event({"name": "event2", "date": "2021-01-03"})
+    event3 = create_event({"name": "event3", "date": "2022-01-04"})
+
+    response = client.get(f"{URI}?not_finished=True")
+    data = response.json()
+
+    data_names = map(lambda e: e['name'], data)
+
+    assert len(data) == 2
+    assert all(map(lambda e: e['name'] in data_names, [event2, event3]))
+    assert not any(map(lambda e: e['name'] in data_names, [event1]))
+
+
+def test_search_events_not_finished_3(monkeypatch):
+    mock_date(monkeypatch, {"year": 2021, "month": 2, "day": 2, "hour": 1})
+    event1 = create_event({"name": "event1", "date": "2020-01-01"})
+    event2 = create_event({"name": "event2", "date": "2021-02-04"})
+    event3 = create_event({"name": "event3", "date": "2022-03-04"})
+
+    response = client.get(f"{URI}?not_finished=True")
+    data = response.json()
+
+    data_names = map(lambda e: e['name'], data)
+
+    assert len(data) == 2
+    assert all(map(lambda e: e['name'] in data_names, [event2, event3]))
+    assert not any(map(lambda e: e['name'] in data_names, [event1]))
+
+
+def test_search_events_not_finished_with_time(monkeypatch):
+    mock_date(monkeypatch, {"year": 2021, "month": 2, "day": 2, "hour": 15})
+    event1 = create_event(
+        {"name": "event1", "date": "2021-02-02", "end_time": "12:00:00"}
+    )
+    event2 = create_event(
+        {"name": "event2", "date": "2021-02-02", "end_time": "16:00:00"}
+    )
+    event3 = create_event(
+        {"name": "event3", "date": "2021-02-02", "end_time": "18:00:00"}
+    )
+
+    response = client.get(f"{URI}?not_finished=True")
+    data = response.json()
+
+    data_names = map(lambda e: e['name'], data)
+
+    assert len(data) == 2
+    assert all(map(lambda e: e['name'] in data_names, [event2, event3]))
+    assert not any(map(lambda e: e['name'] in data_names, [event1]))
+
+
+def test_search_event_finished(monkeypatch):
+    mock_date(monkeypatch, {"year": 2021, "month": 2, "day": 2, "hour": 15})
+    event = create_event({"name": "event1", "date": "2021-02-01"})
+    response = client.get(f"{URI}")
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]['name'] == event['name']
+    assert data[0]['state'] == "Finalizado"
+
+
+def test_search_event_finished_hour(monkeypatch):
+    mock_date(monkeypatch, {"year": 2021, "month": 2, "day": 2, "hour": 15})
+    event = create_event(
+        {"name": "event1", "date": "2021-02-02", "end_time": "12:00:00"}
+    )
+    response = client.get(f"{URI}")
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]['name'] == event['name']
+    assert data[0]['state'] == "Finalizado"
+
+
+def test_max_event_images():
+    images = ["image" + str(i) for i in range(1, 11)]
+    event_body = create_event_body({"images": images})
+    response = client.post(URI, json=event_body)
+    data = response.json()
+    assert response.status_code == 400
+    assert data['detail'] == 'max_number_of_images_is_10'
+
+
+def test_max_minus_one_event_images():
+    images = ["image" + str(i) for i in range(1, 10)]
+    event_body = create_event_body({"images": images})
+    response = client.post(URI, json=event_body)
+    assert response.status_code == 201
+
+
+def test_max_event_faqs():
+    faqs = [
+        {"question": "question" + str(i), "answer": "answer" + str(i)}
+        for i in range(1, 32)
+    ]
+    event_body = create_event_body({"FAQ": faqs})
+    response = client.post(URI, json=event_body)
+    data = response.json()
+    assert response.status_code == 400
+    assert data['detail'] == 'max_number_of_faqs_is_30'
+
+
+def test_max_minus_one_event_faqs():
+    faqs = [
+        {"question": "question" + str(i), "answer": "answer" + str(i)}
+        for i in range(1, 31)
+    ]
+    event_body = create_event_body({"FAQ": faqs})
+    response = client.post(URI, json=event_body)
+    assert response.status_code == 201
+
+
+def test_cancel_event(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+    event = create_event({"date": "2024-02-02"})
+    response = client.put(f"{URI}/{event['id']}/cancel")
+    assert response.status_code == 200
+    assert response.json()['state'] == 'Cancelado'
+
+
+def test_cancel_published_event(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+    event = create_event({"date": "2024-02-02"})
+    client.put(f"{URI}/{event['id']}/publish")
+    response = client.put(f"{URI}/{event['id']}/cancel")
+    assert response.status_code == 200
+    assert response.json()['state'] == 'Cancelado'
+
+
+def test_cancel_non_existing_event():
+    response = client.put(f"{URI}/1/cancel")
+    assert response.status_code == 400
+    assert response.json()['detail'] == 'event_not_found'
