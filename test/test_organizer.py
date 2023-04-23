@@ -71,7 +71,6 @@ def test_organizer_create_wrong_body():
 
     invalid_variations = {
         'first_name': [None, '', 'aa'],
-        'last_name': [None, '', 'aa'],
         'email': [None, '', 'email', 'a', 'email.com'],
         'id': [None, ''],
     }
@@ -113,3 +112,13 @@ def test_organizer_update():
     assert data["profession"] == new_body["profession"]
     assert data["about_me"] == new_body["about_me"]
     assert data["profile_picture"] == new_body["profile_picture"]
+
+
+def test_create_without_last_name():
+    body = create_organizer_body()
+    body.pop('last_name')
+    response = client.post(URI, json=body)
+    assert response.status_code == 201
+    data = response.json()
+    assert "id" in data
+    assert data['last_name'] == body["first_name"]

@@ -19,13 +19,15 @@ class CreateUserCommand:
     def execute(self) -> UserSchema:
         user = User(
             first_name=self.user_data.first_name,
-            last_name=self.user_data.last_name,
+            last_name=self.user_data.last_name
+            if self.user_data.last_name
+            else self.user_data.first_name,
             email=self.user_data.email,
             birth_date=self.user_data.birth_date,
             identification_number=self.user_data.identification_number,
             phone_number=self.user_data.phone_number,
             favourites=[],
-            id=self.user_data.id
+            id=self.user_data.id,
         )
         already_exists = self.user_repository.user_exists_by_email(
             user.email
@@ -43,7 +45,6 @@ class GetUserCommand:
         self.id = _id
 
     def execute(self) -> UserSchema:
-
         exists = self.user_repository.user_exists(self.id)
         if not exists:
             raise UserNotFoundError

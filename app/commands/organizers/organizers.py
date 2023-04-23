@@ -26,7 +26,9 @@ class CreateOrganizerCommand:
     def execute(self) -> OrganizerSchema:
         organizer = Organizer(
             first_name=self.organizer_data.first_name,
-            last_name=self.organizer_data.last_name,
+            last_name=self.organizer_data.last_name
+            if self.organizer_data.last_name
+            else self.organizer_data.first_name,
             email=self.organizer_data.email,
             profession=self.organizer_data.profession,
             about_me=self.organizer_data.about_me,
@@ -49,7 +51,6 @@ class GetOrganizerCommand:
         self.id = _id
 
     def execute(self) -> OrganizerSchema:
-
         exists = self.organizer_repository.organizer_exists(self.id)
         if not exists:
             raise OrganizerNotFoundError
