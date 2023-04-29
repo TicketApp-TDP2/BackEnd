@@ -17,7 +17,7 @@ from app.config.logger import setup_logger
 import uuid
 from typing import List
 from app.schemas.event import State
-import datetime
+from app.utils.now import getNow
 
 logger = setup_logger(__name__)
 
@@ -50,8 +50,8 @@ class CreateBookingCommand:
             raise EventFullError
         if event.state != State.Publicado:
             raise EventNotPublishedError
-        now = datetime.datetime.now().date()
-        time = datetime.datetime.now().time()
+        now = getNow().date()
+        time = getNow().time()
         if event.date < now or (event.date == now and event.end_time < time):
             raise EventFinishedError
         self.event_repository.update_vacants_left_event(

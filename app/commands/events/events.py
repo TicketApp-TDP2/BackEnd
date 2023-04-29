@@ -22,7 +22,7 @@ from app.repositories.event import (
 )
 from app.config.logger import setup_logger
 from datetime import time
-import datetime
+from app.utils.now import getNow
 
 logger = setup_logger(__name__)
 
@@ -138,8 +138,8 @@ class SearchEventsCommand:
         return list(map(EventSchema.from_model, events_ordered))
 
     def check_finished(self, events: List[Event]) -> List[Event]:
-        now = datetime.datetime.now().date()
-        time = datetime.datetime.now().time()
+        now = getNow().date()
+        time = getNow().time()
         new_events = []
         for event in events:
             if event.date < now or (event.date == now and event.end_time < time):

@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from app.models.event import Type, Event, Location, Agenda, Faq, State
 from app.repositories.errors import EventNotFoundError
 from datetime import date, time
-import datetime
+from app.utils.now import getNow
 
 EARTH_RADIUS_METERS = 6_371_000
 
@@ -137,7 +137,7 @@ class PersistentEventRepository(EventRepository):
             srch['state'] = State.Publicado.value
 
         if search.not_finished:
-            now = datetime.datetime.now()
+            now = getNow()
             srch['$or'] = [
                 {
                     '$and': [
