@@ -1,21 +1,10 @@
 from app.schemas.complaints import ComplaintCreateSchema, ComplaintSchema
 from app.models.complaint import Complaint
-
-from .errors import (
-    EventFullError,
-    IncorrectEventError,
-    EventNotPublishedError,
-    EventFinishedError,
-)
 from app.repositories.complaints import (
     ComplaintRepository,
 )
-from app.repositories.event import EventRepository
 from app.config.logger import setup_logger
-import uuid
 from typing import List
-from app.schemas.event import State
-from app.utils.now import getNow
 
 logger = setup_logger(__name__)
 
@@ -43,14 +32,14 @@ class CreateComplaintCommand:
         return ComplaintSchema.from_model(complaint)
 
 
-class GetComplaintsByComplainerCommand:
-    def __init__(self, complaint_repository: ComplaintRepository, complainer_id: str):
+class GetComplaintsByOrganizerCommand:
+    def __init__(self, complaint_repository: ComplaintRepository, organizer_id: str):
         self.complaint_repository = complaint_repository
-        self.complainer_id = complainer_id
+        self.organizer_id = organizer_id
 
     def execute(self) -> List[ComplaintSchema]:
-        complaints = self.complaint_repository.get_complaints_by_complainer(
-            self.complainer_id
+        complaints = self.complaint_repository.get_complaints_by_organizer(
+            self.organizer_id
         )
         return [ComplaintSchema.from_model(complaint) for complaint in complaints]
 

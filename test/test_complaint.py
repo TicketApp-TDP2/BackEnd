@@ -321,298 +321,100 @@ def test_complaint_get_two():
     assert data == complaint_body2
 
 
-"""
+def test_complaint_get_by_organizer_empty():
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
 
-
-
-
-def test_booking_get_by_reserver_empty():
-    reserver = create_user()
-    reserver_id = reserver['id']
-
-    response = client.get(USERS_URI + f"/{reserver_id}/" + RESERVED_URI)
+    response = client.get(URI + f"/organizer/{organizer['id']}")
     assert response.status_code == 200
     assert response.json() == []
 
 
-def test_booking_get_by_reserver_one(monkeypatch):
-    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
+def test_complaint_get_by_organizer_one():
     organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
-    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
     event = create_event({'owner': organizer['id']})
-    client.put(f"{EVENTS_URI}/{event['id']}/publish")
 
-    booking_body = {"event_id": event['id'], "reserver_id": reserver['id']}
+    complaint_body = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+        "organizer_id": organizer['id'],
+    }
 
-    client.post(URI, json=booking_body)
-    reserver_id = reserver['id']
+    client.post(URI, json=complaint_body)
 
-    response = client.get(USERS_URI + f"/{reserver_id}/" + RESERVED_URI)
+    response = client.get(URI + f"/organizer/{organizer['id']}")
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 1
-    booking_body["id"] = data[0]["id"]
-    booking_body["verified"] = False
-    assert data[0] == booking_body
+    complaint_body["id"] = data[0]["id"]
+    assert data[0] == complaint_body
 
 
-def test_booking_get_by_reserver_two(monkeypatch):
-    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
+def test_complaint_get_by_organizer_two():
     organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
-    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
-    event1 = create_event({'owner': organizer['id']})
-    client.put(f"{EVENTS_URI}/{event1['id']}/publish")
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
+    event = create_event({'owner': organizer['id']})
     event2 = create_event({'owner': organizer['id']})
-    client.put(f"{EVENTS_URI}/{event2['id']}/publish")
 
-    booking_body1 = {"event_id": event1['id'], "reserver_id": reserver['id']}
+    complaint_body1 = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+        "organizer_id": organizer['id'],
+    }
 
-    booking_body2 = {"event_id": event2['id'], "reserver_id": reserver['id']}
-    reserver_id = reserver['id']
+    complaint_body2 = {
+        "event_id": event2['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+        "organizer_id": organizer['id'],
+    }
 
-    client.post(URI, json=booking_body1)
-    client.post(URI, json=booking_body2)
+    client.post(URI, json=complaint_body1)
+    client.post(URI, json=complaint_body2)
 
-    response = client.get(USERS_URI + f"/{reserver_id}/" + RESERVED_URI)
-
+    response = client.get(URI + f"/organizer/{organizer['id']}")
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 2
-    booking_body1["id"] = data[0]["id"]
-    booking_body1["verified"] = False
-    booking_body2["id"] = data[1]["id"]
-    booking_body2["verified"] = False
-    assert data[0] == booking_body1
-    assert data[1] == booking_body2
+    complaint_body1["id"] = data[0]["id"]
+    complaint_body2["id"] = data[1]["id"]
+    assert data[0] == complaint_body1
+    assert data[1] == complaint_body2
 
 
-def test_booking_vacants_left_is_one_less(monkeypatch):
-    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
-    number_of_vacants = 10
+def test_get_complaint_by_organizer_two_organizers():
     organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
-    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
-    event = create_event({'owner': organizer['id'], 'vacants': number_of_vacants})
-    client.put(f"{EVENTS_URI}/{event['id']}/publish")
-
-    event_id = event['id']
-    booking_body = {"event_id": event_id, "reserver_id": reserver['id']}
-    client.post(URI, json=booking_body)
-
-    response = client.get(f'api/events/{event_id}')
-    data = response.json()
-    assert data['id'] == event_id
-    assert data['vacants_left'] == number_of_vacants - 1
-
-
-def test_booking_vacants_left_is_two_less(monkeypatch):
-    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
-    number_of_vacants = 10
-    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
-    reserver1 = create_user({'email': 'reserver1@mail.com', 'id': '2341'})
-    reserver2 = create_user({'email': 'reserver2@mail.com', 'id': '2342'})
-    event = create_event({'owner': organizer['id'], 'vacants': number_of_vacants})
-    client.put(f"{EVENTS_URI}/{event['id']}/publish")
-
-    event_id = event['id']
-    booking_body1 = {"event_id": event_id, "reserver_id": reserver1['id']}
-    client.post(URI, json=booking_body1)
-    booking_body2 = {"event_id": event_id, "reserver_id": reserver2['id']}
-    client.post(URI, json=booking_body2)
-
-    response = client.get(f'api/events/{event_id}')
-    data = response.json()
-    assert data['id'] == event_id
-    assert data['vacants_left'] == number_of_vacants - 2
-
-
-def test_booking_no_more_vacants(monkeypatch):
-    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
-    number_of_vacants = 1
-    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
-    reserver1 = create_user({'email': 'reserver1@mail.com', 'id': '2341'})
-    reserver2 = create_user({'email': 'reserver2@mail.com', 'id': '2342'})
-    event = create_event({'owner': organizer['id'], 'vacants': number_of_vacants})
-    client.put(f"{EVENTS_URI}/{event['id']}/publish")
-
-    event_id = event['id']
-    booking_body1 = {"event_id": event_id, "reserver_id": reserver1['id']}
-    client.post(URI, json=booking_body1)
-
-    booking_body2 = {"event_id": event_id, "reserver_id": reserver2['id']}
-    response = client.post(URI, json=booking_body2)
-
-    assert response.status_code == 400
-    assert response.json() == {'detail': 'no_more_vacants_left'}
-
-
-def test_verify_booking(monkeypatch):
-    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
-    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
-    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
+    organizer2 = create_organizer({'email': 'email2@mail.com', 'id': '1234'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
     event = create_event({'owner': organizer['id']})
-    client.put(f"{EVENTS_URI}/{event['id']}/publish")
 
-    event_id = event['id']
-    booking_body = {"event_id": event_id, "reserver_id": reserver['id']}
-    response = client.post(URI, json=booking_body)
-    data = response.json()
+    complaint_body1 = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+        "organizer_id": organizer['id'],
+    }
 
-    booking_id = data['id']
+    complaint_body2 = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+        "organizer_id": organizer2['id'],
+    }
 
-    body = {"event_id": event_id}
-    response = client.put(URI + f'/{booking_id}/verify', json=body)
+    client.post(URI, json=complaint_body1)
+    client.post(URI, json=complaint_body2)
+
+    response = client.get(URI + f"/organizer/{organizer['id']}")
     assert response.status_code == 200
-
-
-def test_verify_non_existing_booking(monkeypatch):
-    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
-    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
-    event = create_event({'owner': organizer['id']})
-    client.put(f"{EVENTS_URI}/{event['id']}/publish")
-
-    non_existing_booking_id = "123"
-    event_id = event['id']
-    body = {"event_id": event_id}
-
-    response = client.put(URI + f'/{non_existing_booking_id}/verify', json=body)
-    assert response.status_code == 400
-    assert response.json() == {'detail': 'booking_not_found'}
-
-
-def test_verify_booking_with_wrong_event_id(monkeypatch):
-    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
-    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
-    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
-    event = create_event({'owner': organizer['id']})
-    event2 = create_event({'owner': organizer['id']})
-    client.put(f"{EVENTS_URI}/{event['id']}/publish")
-    client.put(f"{EVENTS_URI}/{event2['id']}/publish")
-
-    event_id1 = event['id']
-    event_id2 = event2['id']
-    booking_body = {"event_id": event_id1, "reserver_id": reserver['id']}
-    response = client.post(URI, json=booking_body)
     data = response.json()
-    booking_id = data['id']
-
-    body = {"event_id": event_id2}
-    response = client.put(URI + f'/{booking_id}/verify', json=body)
-    assert response.status_code == 400
-    assert response.json() == {'detail': 'incorrect_event'}
-
-
-def test_verify_booking_twice(monkeypatch):
-    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
-    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
-    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
-    event = create_event({'owner': organizer['id']})
-    client.put(f"{EVENTS_URI}/{event['id']}/publish")
-
-    event_id = event['id']
-    booking_body = {"event_id": event_id, "reserver_id": reserver['id']}
-    response = client.post(URI, json=booking_body)
-    data = response.json()
-    booking_id = data['id']
-
-    body = {"event_id": event_id}
-    client.put(URI + f'/{booking_id}/verify', json=body)
-    response = client.put(URI + f'/{booking_id}/verify', json=body)
-    assert response.status_code == 400
-    assert response.json() == {'detail': 'booking_already_verified'}
-
-
-def test_booking_with_non_published_event(monkeypatch):
-    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
-    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
-    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
-    event = create_event({'owner': organizer['id']})
-
-    booking_body = {
-        "event_id": event['id'],
-        "reserver_id": reserver['id'],
-    }
-
-    response = client.post(URI, json=booking_body)
-
-    assert response.status_code == 400
-    assert response.json() == {'detail': 'event_not_published'}
-
-
-def test_booking_with_finished_event(monkeypatch):
-    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 0})
-    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
-    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
-    event = create_event({'owner': organizer['id'], 'date': '2020-01-01'})
-    client.put(f"{EVENTS_URI}/{event['id']}/publish")
-
-    booking_body = {
-        "event_id": event['id'],
-        "reserver_id": reserver['id'],
-    }
-
-    response = client.post(URI, json=booking_body)
-
-    assert response.status_code == 400
-    assert response.json() == {'detail': 'event_already_finished'}
-
-
-def test_booking_with_finished_event_hour(monkeypatch):
-    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 15})
-    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
-    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
-    event = create_event(
-        {
-            'owner': organizer['id'],
-            'date': '2022-01-01',
-        }
-    )
-    client.put(f"{EVENTS_URI}/{event['id']}/publish")
-
-    booking_body = {
-        "event_id": event['id'],
-        "reserver_id": reserver['id'],
-    }
-
-    response = client.post(URI, json=booking_body)
-
-    assert response.status_code == 400
-    assert response.json() == {'detail': 'event_already_finished'}
-
-
-def test_event_has_0_verified_after_booking(monkeypatch):
-    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
-    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
-    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
-    event = create_event({'owner': organizer['id']})
-    client.put(f"{EVENTS_URI}/{event['id']}/publish")
-
-    booking_body = {
-        "event_id": event['id'],
-        "reserver_id": reserver['id'],
-    }
-
-    client.post(URI, json=booking_body)
-    response = client.get(f"{EVENTS_URI}/{event['id']}")
-    assert response.status_code == 200
-    assert response.json()['verified_vacants'] == 0
-
-
-def test_event_has_1_verified_after_booking_verified(monkeypatch):
-    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
-    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
-    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
-    event = create_event({'owner': organizer['id']})
-    client.put(f"{EVENTS_URI}/{event['id']}/publish")
-
-    booking_body = {
-        "event_id": event['id'],
-        "reserver_id": reserver['id'],
-    }
-
-    booking_id = client.post(URI, json=booking_body).json()['id']
-    client.put(URI + f'/{booking_id}/verify', json={'event_id': event['id']})
-
-    response = client.get(f"{EVENTS_URI}/{event['id']}")
-    assert response.status_code == 200
-    assert response.json()['verified_vacants'] == 1
-"""
+    assert len(data) == 1
+    complaint_body1["id"] = data[0]["id"]
+    assert data[0] == complaint_body1

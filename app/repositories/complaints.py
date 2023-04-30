@@ -10,7 +10,7 @@ class ComplaintRepository(ABC):
         pass
 
     @abstractmethod
-    def get_complaints_by_complainer(self, complainer_id: str) -> list[Complaint]:
+    def get_complaints_by_organizer(self, organizer_id: str) -> list[Complaint]:
         pass
 
     @abstractmethod
@@ -28,8 +28,8 @@ class PersistentComplaintRepository(ComplaintRepository):
         self.complaints.insert_one(data)
         return complaint
 
-    def get_complaints_by_complainer(self, complainer_id: str) -> list[Complaint]:
-        complaints = self.complaints.find({'complainer_id': complainer_id})
+    def get_complaints_by_organizer(self, organizer_id: str) -> list[Complaint]:
+        complaints = self.complaints.find({'organizer_id': organizer_id})
         return [self.__deserialize_complaint(complaint) for complaint in complaints]
 
     def get_complaint(self, complaint_id: str) -> Complaint:
