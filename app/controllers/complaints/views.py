@@ -1,5 +1,6 @@
 from fastapi.exceptions import HTTPException
 from app.repositories.complaints import PersistentComplaintRepository
+from app.repositories.event import PersistentEventRepository
 from fastapi import status, APIRouter
 from app.config.logger import setup_logger
 from app.schemas.complaints import ComplaintCreateSchema, ComplaintSchema
@@ -23,7 +24,10 @@ router = APIRouter()
 async def create_complaint(complaint_body: ComplaintCreateSchema):
     try:
         repository = PersistentComplaintRepository()
-        complaint = CreateComplaintCommand(repository, complaint_body).execute()
+        event_repository = PersistentEventRepository()
+        complaint = CreateComplaintCommand(
+            repository, event_repository, complaint_body
+        ).execute()
     except TicketAppError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:

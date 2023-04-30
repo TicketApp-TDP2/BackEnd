@@ -9,7 +9,6 @@ class ComplaintSchemaBase(BaseModel):
     complainer_id: str = Field(..., min_length=1)
     type: ComplaintType
     description: Optional[str]
-    organizer_id: str = Field(..., min_length=1)
 
 
 class ComplaintCreateSchema(ComplaintSchemaBase):
@@ -18,6 +17,7 @@ class ComplaintCreateSchema(ComplaintSchemaBase):
 
 class ComplaintSchema(ComplaintSchemaBase):
     id: str = Field(..., min_length=1)
+    organizer_id: str = Field(..., min_length=1)
 
     @classmethod
     def from_model(cls, complaint: Complaint) -> ComplaintSchema:
