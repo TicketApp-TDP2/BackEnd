@@ -1,6 +1,11 @@
 from app.repositories.config import db
 from abc import ABC, abstractmethod
-from app.models.complaint import Complaint, ComplaintType, ComplaintOrganizerRanking
+from app.models.complaint import (
+    Complaint,
+    ComplaintType,
+    ComplaintOrganizerRanking,
+    ComplaintEventRanking,
+)
 from app.repositories.errors import ComplaintNotFoundError
 from bson.son import SON
 
@@ -24,6 +29,10 @@ class ComplaintRepository(ABC):
 
     @abstractmethod
     def get_complaints_ranking_by_organizer(self) -> list[ComplaintOrganizerRanking]:
+        pass
+
+    @abstractmethod
+    def get_complaints_ranking_by_event(self) -> list[ComplaintEventRanking]:
         pass
 
 
@@ -52,16 +61,26 @@ class PersistentComplaintRepository(ComplaintRepository):
         return self.__deserialize_complaint(complaint)
 
     def get_complaints_ranking_by_organizer(self) -> list[ComplaintOrganizerRanking]:
-        complaints = self.complaints.aggregate(
+        ranking = self.complaints.aggregate(
             [
                 {'$group': {'_id': '$organizer_id', 'count': {'$sum': 1}}},
                 {'$sort': SON([("count", -1), ("_id", -1)])},
             ]
         )
-        print("complaint ", complaints)
         return [
             ComplaintOrganizerRanking(organizer['_id'], organizer['count'])
-            for organizer in complaints
+            for organizer in ranking
+        ]
+
+    def get_complaints_ranking_by_event(self) -> list[ComplaintEventRanking]:
+        ranking = self.complaints.aggregate(
+            [
+                {'$group': {'_id': '$event_id', 'count': {'$sum': 1}}},
+                {'$sort': SON([("count", -1), ("_id", -1)])},
+            ]
+        )
+        return [
+            ComplaintEventRanking(event['_id'], event['count']) for event in ranking
         ]
 
     def __serialize_complaint(self, complaint: Complaint) -> dict:

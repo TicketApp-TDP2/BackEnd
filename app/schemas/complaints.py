@@ -1,6 +1,11 @@
 from __future__ import annotations
 from pydantic import BaseModel, Field
-from app.models.complaint import Complaint, ComplaintType, ComplaintOrganizerRanking
+from app.models.complaint import (
+    Complaint,
+    ComplaintType,
+    ComplaintOrganizerRanking,
+    ComplaintEventRanking,
+)
 from typing import Optional
 
 
@@ -20,9 +25,25 @@ class ComplaintOrganizerRankingSchema(BaseModel):
     complaints: int
 
     @classmethod
-    def from_model(cls, complaint: ComplaintOrganizerRanking) -> ComplaintSchema:
+    def from_model(
+        cls, complaint: ComplaintOrganizerRanking
+    ) -> ComplaintOrganizerRankingSchema:
         return ComplaintOrganizerRankingSchema(
             organizer_id=complaint.organizer_id,
+            complaints=complaint.complaints,
+        )
+
+
+class ComplaintEventRankingSchema(BaseModel):
+    event_id: str = Field(..., min_length=1)
+    complaints: int
+
+    @classmethod
+    def from_model(
+        cls, complaint: ComplaintEventRanking
+    ) -> ComplaintEventRankingSchema:
+        return ComplaintEventRankingSchema(
+            event_id=complaint.event_id,
             complaints=complaint.complaints,
         )
 

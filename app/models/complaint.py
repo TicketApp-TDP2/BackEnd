@@ -20,6 +20,16 @@ class ComplaintOrganizerRanking:
         self.complaints = complaints
 
 
+class ComplaintEventRanking:
+    def __init__(
+        self,
+        event_id: str,
+        complaints: int,
+    ):
+        self.event_id = event_id
+        self.complaints = complaints
+
+
 class Complaint:
     def __init__(
         self,

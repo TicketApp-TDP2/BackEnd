@@ -7,6 +7,7 @@ from app.schemas.complaints import (
     ComplaintCreateSchema,
     ComplaintSchema,
     ComplaintOrganizerRankingSchema,
+    ComplaintEventRankingSchema,
 )
 from app.commands.complaints import (
     CreateComplaintCommand,
@@ -14,6 +15,7 @@ from app.commands.complaints import (
     GetComplaintsByOrganizerCommand,
     GetComplaintsByEventCommand,
     GetComplaintsRankingByOrganizerCommand,
+    GetComplaintsRankingByEventCommand,
 )
 from app.utils.error import TicketAppError
 from typing import List
@@ -116,6 +118,27 @@ async def get_complaint_ranking_by_organizer():
     try:
         repository = PersistentComplaintRepository()
         ranking = GetComplaintsRankingByOrganizerCommand(repository).execute()
+    except TicketAppError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Error"
+        )
+
+    return ranking
+
+
+@router.get(
+    '/complaints/ranking/event',
+    status_code=status.HTTP_200_OK,
+    response_model=List[ComplaintEventRankingSchema],
+    tags=["Complaints"],
+)
+async def get_complaint_ranking_by_event():
+    try:
+        repository = PersistentComplaintRepository()
+        ranking = GetComplaintsRankingByEventCommand(repository).execute()
     except TicketAppError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
