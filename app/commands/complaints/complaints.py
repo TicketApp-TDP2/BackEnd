@@ -53,3 +53,13 @@ class GetComplaintsByComplainerCommand:
             self.complainer_id
         )
         return [ComplaintSchema.from_model(complaint) for complaint in complaints]
+
+
+class GetComplaintCommand:
+    def __init__(self, complaint_repository: ComplaintRepository, complaint_id: str):
+        self.complaint_repository = complaint_repository
+        self.complaint_id = complaint_id
+
+    def execute(self) -> List[ComplaintSchema]:
+        complaint = self.complaint_repository.get_complaint(self.complaint_id)
+        return ComplaintSchema.from_model(complaint)

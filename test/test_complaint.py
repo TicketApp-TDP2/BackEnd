@@ -104,7 +104,6 @@ def test_complaint_create_succesfully():
     organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
     complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
     event = create_event({'owner': organizer['id']})
-    client.put(f"{EVENTS_URI}/{event['id']}/publish")
 
     complaint_body = {
         "event_id": event['id'],
@@ -127,7 +126,6 @@ def test_complaint_create_without_description():
     organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
     complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
     event = create_event({'owner': organizer['id']})
-    client.put(f"{EVENTS_URI}/{event['id']}/publish")
 
     complaint_body = {
         "event_id": event['id'],
@@ -146,25 +144,27 @@ def test_complaint_create_without_description():
     assert response_data == complaint_body
 
 
-"""
-def test_booking_create_with_missing_data(monkeypatch):
-    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
+def test_complaint_create_with_missing_data():
     organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
-    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
     event = create_event({'owner': organizer['id']})
-    client.put(f"{EVENTS_URI}/{event['id']}/publish")
 
-    booking_body = {
+    complaint_body = {
         "event_id": event['id'],
-        "reserver_id": reserver['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+        "organizer_id": organizer['id'],
     }
 
     invalid_variations = {
         'event_id': [None, ''],
-        'reserver_id': [None, ''],
+        'complainer_id': [None, ''],
+        'type': [None, '', 'invalid_type'],
+        'organizer_id': [None, ''],
     }
 
-    invalid_bodies = generate_invalid(booking_body, invalid_variations)
+    invalid_bodies = generate_invalid(complaint_body, invalid_variations)
 
     for inv_body in invalid_bodies:
         response = client.post(URI, json=inv_body)
@@ -176,60 +176,154 @@ def test_booking_create_with_missing_data(monkeypatch):
             raise
 
 
-def test_booking_create_duplicated(monkeypatch):
-    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
+def test_complaint_create_twice():
     organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
-    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
     event = create_event({'owner': organizer['id']})
-    client.put(f"{EVENTS_URI}/{event['id']}/publish")
 
-    booking_body = {
+    complaint_body1 = {
         "event_id": event['id'],
-        "reserver_id": reserver['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+        "organizer_id": organizer['id'],
     }
 
-    client.post(URI, json=booking_body)
-    response = client.post(URI, json=booking_body)
-    response_data = response.json()
-
-    assert response.status_code == 400
-    assert response_data['detail'] == "booking_already_exists"
-
-
-def test_booking_create_with_2_reservers(monkeypatch):
-    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
-    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
-    reserver1 = create_user({'email': 'reserver@mail.com', 'id': '234'})
-    reserver2 = create_user({'email': 'reserver2@mail.com', 'id': '345'})
-    event = create_event({'owner': organizer['id']})
-    client.put(f"{EVENTS_URI}/{event['id']}/publish")
-
-    booking_body1 = {
+    complaint_body2 = {
         "event_id": event['id'],
-        "reserver_id": reserver1['id'],
+        "complainer_id": complainer['id'],
+        "type": "Otros",
+        "description": "description",
+        "organizer_id": organizer['id'],
     }
 
-    booking_body2 = {
-        "event_id": event['id'],
-        "reserver_id": reserver2['id'],
-    }
-
-    response1 = client.post(URI, json=booking_body1)
-    response2 = client.post(URI, json=booking_body2)
+    response1 = client.post(URI, json=complaint_body1)
+    response2 = client.post(URI, json=complaint_body2)
     response_data1 = response1.json()
     response_data2 = response2.json()
 
     assert response1.status_code == 201
     assert 'id' in response_data1
-    booking_body1["id"] = response_data1["id"]
-    booking_body1["verified"] = False
-    assert response_data1 == booking_body1
+    complaint_body1["id"] = response_data1["id"]
+    assert response_data1 == complaint_body1
 
     assert response2.status_code == 201
     assert 'id' in response_data2
-    booking_body2["id"] = response_data2["id"]
-    booking_body2["verified"] = False
-    assert response_data2 == booking_body2
+    complaint_body2["id"] = response_data2["id"]
+    assert response_data2 == complaint_body2
+
+
+def test_complaint_create_with_2_complainers():
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    complainer1 = create_user({'email': 'complainer@mail.com', 'id': '234'})
+    complainer2 = create_user({'email': 'complainer2@mail.com', 'id': '2348'})
+    event = create_event({'owner': organizer['id']})
+
+    complaint_body1 = {
+        "event_id": event['id'],
+        "complainer_id": complainer1['id'],
+        "type": "Spam",
+        "description": "description",
+        "organizer_id": organizer['id'],
+    }
+
+    complaint_body2 = {
+        "event_id": event['id'],
+        "complainer_id": complainer2['id'],
+        "type": "Otros",
+        "description": "description",
+        "organizer_id": organizer['id'],
+    }
+
+    response1 = client.post(URI, json=complaint_body1)
+    response2 = client.post(URI, json=complaint_body2)
+    response_data1 = response1.json()
+    response_data2 = response2.json()
+
+    assert response1.status_code == 201
+    assert 'id' in response_data1
+    complaint_body1["id"] = response_data1["id"]
+    assert response_data1 == complaint_body1
+
+    assert response2.status_code == 201
+    assert 'id' in response_data2
+    complaint_body2["id"] = response_data2["id"]
+    assert response_data2 == complaint_body2
+
+
+def test_complaint_get_non_existent():
+    response = client.get(URI + f"/123")
+    assert response.status_code == 404
+    assert response.json() == {'detail': 'complaint_not_found'}
+
+
+def test_complaint_get_one():
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
+    event = create_event({'owner': organizer['id']})
+
+    complaint_body = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+        "organizer_id": organizer['id'],
+    }
+
+    response = client.post(URI, json=complaint_body)
+    id = response.json()['id']
+
+    response = client.get(URI + f"/{id}")
+    assert response.status_code == 200
+    data = response.json()
+    complaint_body["id"] = id
+    assert data == complaint_body
+
+
+def test_complaint_get_two():
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    complainer1 = create_user({'email': 'complainer1@mail.com', 'id': '234'})
+    complainer2 = create_user({'email': 'complainer2@mail.com', 'id': '2345'})
+    event = create_event({'owner': organizer['id']})
+
+    complaint_body1 = {
+        "event_id": event['id'],
+        "complainer_id": complainer1['id'],
+        "type": "Spam",
+        "description": "description",
+        "organizer_id": organizer['id'],
+    }
+
+    complaint_body2 = {
+        "event_id": event['id'],
+        "complainer_id": complainer2['id'],
+        "type": "Spam",
+        "description": "description",
+        "organizer_id": organizer['id'],
+    }
+
+    response = client.post(URI, json=complaint_body1)
+    id1 = response.json()['id']
+    complaint_body1["id"] = id1
+
+    response = client.post(URI, json=complaint_body2)
+    id2 = response.json()['id']
+    complaint_body2["id"] = id2
+
+    response = client.get(URI + f"/{id1}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data == complaint_body1
+
+    response = client.get(URI + f"/{id2}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data == complaint_body2
+
+
+"""
+
+
 
 
 def test_booking_get_by_reserver_empty():
