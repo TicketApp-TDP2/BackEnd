@@ -7,6 +7,7 @@ from app.commands.complaints import (
     CreateComplaintCommand,
     GetComplaintCommand,
     GetComplaintsByOrganizerCommand,
+    GetComplaintsByEventCommand,
 )
 from app.utils.error import TicketAppError
 from typing import List
@@ -64,6 +65,27 @@ async def get_complaint_by_organizer(id: str):
     try:
         repository = PersistentComplaintRepository()
         event = GetComplaintsByOrganizerCommand(repository, id).execute()
+    except TicketAppError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Error"
+        )
+
+    return event
+
+
+@router.get(
+    '/complaints/event/{id}',
+    status_code=status.HTTP_200_OK,
+    response_model=List[ComplaintSchema],
+    tags=["Complaints"],
+)
+async def get_complaint_by_event(id: str):
+    try:
+        repository = PersistentComplaintRepository()
+        event = GetComplaintsByEventCommand(repository, id).execute()
     except TicketAppError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:

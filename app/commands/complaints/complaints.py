@@ -44,6 +44,16 @@ class GetComplaintsByOrganizerCommand:
         return [ComplaintSchema.from_model(complaint) for complaint in complaints]
 
 
+class GetComplaintsByEventCommand:
+    def __init__(self, complaint_repository: ComplaintRepository, event_id: str):
+        self.complaint_repository = complaint_repository
+        self.event_id = event_id
+
+    def execute(self) -> List[ComplaintSchema]:
+        complaints = self.complaint_repository.get_complaints_by_event(self.event_id)
+        return [ComplaintSchema.from_model(complaint) for complaint in complaints]
+
+
 class GetComplaintCommand:
     def __init__(self, complaint_repository: ComplaintRepository, complaint_id: str):
         self.complaint_repository = complaint_repository

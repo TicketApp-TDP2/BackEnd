@@ -14,6 +14,10 @@ class ComplaintRepository(ABC):
         pass
 
     @abstractmethod
+    def get_complaints_by_event(self, event_id: str) -> list[Complaint]:
+        pass
+
+    @abstractmethod
     def get_complaint(self, complaint_id: str) -> Complaint:
         pass
 
@@ -30,6 +34,10 @@ class PersistentComplaintRepository(ComplaintRepository):
 
     def get_complaints_by_organizer(self, organizer_id: str) -> list[Complaint]:
         complaints = self.complaints.find({'organizer_id': organizer_id})
+        return [self.__deserialize_complaint(complaint) for complaint in complaints]
+
+    def get_complaints_by_event(self, event_id: str) -> list[Complaint]:
+        complaints = self.complaints.find({'event_id': event_id})
         return [self.__deserialize_complaint(complaint) for complaint in complaints]
 
     def get_complaint(self, complaint_id: str) -> Complaint:

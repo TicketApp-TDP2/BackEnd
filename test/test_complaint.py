@@ -418,3 +418,102 @@ def test_get_complaint_by_organizer_two_organizers():
     assert len(data) == 1
     complaint_body1["id"] = data[0]["id"]
     assert data[0] == complaint_body1
+
+
+def test_complaint_get_by_event_empty():
+    event = create_event({'owner': "123"})
+
+    response = client.get(URI + f"/event/{event['id']}")
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_complaint_get_by_event_one():
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
+    event = create_event({'owner': organizer['id']})
+
+    complaint_body = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+        "organizer_id": organizer['id'],
+    }
+
+    client.post(URI, json=complaint_body)
+
+    response = client.get(URI + f"/event/{event['id']}")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    complaint_body["id"] = data[0]["id"]
+    assert data[0] == complaint_body
+
+
+def test_complaint_get_by_event_two():
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    organizer2 = create_organizer({'email': 'email2@mail.com', 'id': '1232'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
+    event = create_event({'owner': organizer['id']})
+
+    complaint_body1 = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+        "organizer_id": organizer['id'],
+    }
+
+    complaint_body2 = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+        "organizer_id": organizer2['id'],
+    }
+
+    client.post(URI, json=complaint_body1)
+    client.post(URI, json=complaint_body2)
+
+    response = client.get(URI + f"/event/{event['id']}")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    complaint_body1["id"] = data[0]["id"]
+    complaint_body2["id"] = data[1]["id"]
+    assert data[0] == complaint_body1
+    assert data[1] == complaint_body2
+
+
+def test_get_complaint_by_event_two_events():
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
+    event = create_event({'owner': organizer['id']})
+    event2 = create_event({'owner': organizer['id']})
+
+    complaint_body1 = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+        "organizer_id": organizer['id'],
+    }
+
+    complaint_body2 = {
+        "event_id": event2['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+        "organizer_id": organizer['id'],
+    }
+
+    client.post(URI, json=complaint_body1)
+    client.post(URI, json=complaint_body2)
+
+    response = client.get(URI + f"/event/{event['id']}")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    complaint_body1["id"] = data[0]["id"]
+    assert data[0] == complaint_body1
