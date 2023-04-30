@@ -3,12 +3,17 @@ from app.repositories.complaints import PersistentComplaintRepository
 from app.repositories.event import PersistentEventRepository
 from fastapi import status, APIRouter
 from app.config.logger import setup_logger
-from app.schemas.complaints import ComplaintCreateSchema, ComplaintSchema
+from app.schemas.complaints import (
+    ComplaintCreateSchema,
+    ComplaintSchema,
+    ComplaintOrganizerRankingSchema,
+)
 from app.commands.complaints import (
     CreateComplaintCommand,
     GetComplaintCommand,
     GetComplaintsByOrganizerCommand,
     GetComplaintsByEventCommand,
+    GetComplaintsRankingByOrganizerCommand,
 )
 from app.utils.error import TicketAppError
 from typing import List
@@ -47,7 +52,7 @@ async def create_complaint(complaint_body: ComplaintCreateSchema):
 async def get_complaint(id: str):
     try:
         repository = PersistentComplaintRepository()
-        event = GetComplaintCommand(repository, id).execute()
+        complaint = GetComplaintCommand(repository, id).execute()
     except TicketAppError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
@@ -56,7 +61,7 @@ async def get_complaint(id: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Error"
         )
 
-    return event
+    return complaint
 
 
 @router.get(
@@ -68,7 +73,7 @@ async def get_complaint(id: str):
 async def get_complaint_by_organizer(id: str):
     try:
         repository = PersistentComplaintRepository()
-        event = GetComplaintsByOrganizerCommand(repository, id).execute()
+        complaints = GetComplaintsByOrganizerCommand(repository, id).execute()
     except TicketAppError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
@@ -77,7 +82,7 @@ async def get_complaint_by_organizer(id: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Error"
         )
 
-    return event
+    return complaints
 
 
 @router.get(
@@ -89,7 +94,7 @@ async def get_complaint_by_organizer(id: str):
 async def get_complaint_by_event(id: str):
     try:
         repository = PersistentComplaintRepository()
-        event = GetComplaintsByEventCommand(repository, id).execute()
+        complaints = GetComplaintsByEventCommand(repository, id).execute()
     except TicketAppError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
@@ -98,4 +103,25 @@ async def get_complaint_by_event(id: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Error"
         )
 
-    return event
+    return complaints
+
+
+@router.get(
+    '/complaints/ranking/organizer',
+    status_code=status.HTTP_200_OK,
+    response_model=List[ComplaintOrganizerRankingSchema],
+    tags=["Complaints"],
+)
+async def get_complaint_ranking_by_organizer():
+    try:
+        repository = PersistentComplaintRepository()
+        ranking = GetComplaintsRankingByOrganizerCommand(repository).execute()
+    except TicketAppError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Error"
+        )
+
+    return ranking

@@ -1,7 +1,8 @@
 from app.repositories.config import db
 from abc import ABC, abstractmethod
-from app.models.complaint import Complaint, ComplaintType
+from app.models.complaint import Complaint, ComplaintType, ComplaintOrganizerRanking
 from app.repositories.errors import ComplaintNotFoundError
+from bson.son import SON
 
 
 class ComplaintRepository(ABC):
@@ -19,6 +20,10 @@ class ComplaintRepository(ABC):
 
     @abstractmethod
     def get_complaint(self, complaint_id: str) -> Complaint:
+        pass
+
+    @abstractmethod
+    def get_complaints_ranking_by_organizer(self) -> list[ComplaintOrganizerRanking]:
         pass
 
 
@@ -45,6 +50,19 @@ class PersistentComplaintRepository(ComplaintRepository):
         if complaint is None:
             raise ComplaintNotFoundError
         return self.__deserialize_complaint(complaint)
+
+    def get_complaints_ranking_by_organizer(self) -> list[ComplaintOrganizerRanking]:
+        complaints = self.complaints.aggregate(
+            [
+                {'$group': {'_id': '$organizer_id', 'count': {'$sum': 1}}},
+                {'$sort': SON([("count", -1), ("_id", -1)])},
+            ]
+        )
+        print("complaint ", complaints)
+        return [
+            ComplaintOrganizerRanking(organizer['_id'], organizer['count'])
+            for organizer in complaints
+        ]
 
     def __serialize_complaint(self, complaint: Complaint) -> dict:
         serialized = {

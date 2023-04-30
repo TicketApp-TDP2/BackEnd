@@ -249,6 +249,22 @@ def test_complaint_create_with_2_complainers():
     assert response_data2 == complaint_body2
 
 
+def test_create_complaint_with_non_existing_event():
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
+
+    complaint_body = {
+        "event_id": "123",
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+    }
+
+    response = client.post(URI, json=complaint_body)
+
+    assert response.status_code == 400
+    assert response.json() == {'detail': 'event_not_found'}
+
+
 def test_complaint_get_non_existent():
     response = client.get(URI + "/123")
     assert response.status_code == 404
@@ -516,37 +532,37 @@ def test_get_complaint_by_event_two_events():
     assert data[0] == complaint_body1
 
 
-"""
 def test_complaint_ranking_by_organizer_empty():
-    response = client.get(URI + "/organizer/ranking")
+    response = client.get(URI + "/ranking/organizer")
     assert response.status_code == 200
     assert response.json() == []
+
 
 def test_complaint_ranking_by_organizer_one():
     organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
     complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
-    event = create_event({'owner': organizer['id']})
+    event = create_event({'organizer': organizer['id']})
 
     complaint_body = {
         "event_id": event['id'],
         "complainer_id": complainer['id'],
         "type": "Spam",
         "description": "description",
-        "organizer_id": organizer['id'],
     }
 
     client.post(URI, json=complaint_body)
 
-    response = client.get(URI + f"/organizer/ranking")
+    response = client.get(URI + "/ranking/organizer")
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 1
     assert data[0] == {'organizer_id': organizer['id'], 'complaints': 1}
 
+
 def test_complaint_ranking_by_organizer_two():
     organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
     complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
-    event = create_event({'owner': organizer['id']})
+    event = create_event({'organizer': organizer['id']})
 
     complaint_body = {
         "event_id": event['id'],
@@ -559,40 +575,42 @@ def test_complaint_ranking_by_organizer_two():
     client.post(URI, json=complaint_body)
     client.post(URI, json=complaint_body)
 
-    response = client.get(URI + f"/organizer/ranking")
+    response = client.get(URI + "/ranking/organizer")
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 1
     assert data[0] == {'organizer_id': organizer['id'], 'complaints': 2}
+
 
 def test_complaint_ranking_by_organizer_two_organizers():
     organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
     organizer2 = create_organizer({'email': 'email2@mail.com', 'id': '1232'})
     complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
-    event = create_event({'owner': organizer['id']})
+    event = create_event({'organizer': organizer['id']})
+    event2 = create_event({'organizer': organizer2['id']})
 
     complaint_body = {
         "event_id": event['id'],
         "complainer_id": complainer['id'],
         "type": "Spam",
         "description": "description",
-        "organizer_id": organizer['id'],
     }
 
-    client.post(URI, json=complaint_body)
     client.post(URI, json=complaint_body)
 
     complaint_body2 = {
-        "event_id": event['id'],
+        "event_id": event2['id'],
         "complainer_id": complainer['id'],
         "type": "Spam",
         "description": "description",
-        "organizer_id": organizer2['id'],
     }
 
-    response = client.get(URI + f"/organizer/ranking")
+    client.post(URI, json=complaint_body2)
+    client.post(URI, json=complaint_body2)
+
+    response = client.get(URI + "/ranking/organizer")
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 1
-    assert data[0] == {'organizer_id': organizer['id'], 'complaints': 2}
-"""
+    assert len(data) == 2
+    assert data[0] == {'organizer_id': organizer2['id'], 'complaints': 2}
+    assert data[1] == {'organizer_id': organizer['id'], 'complaints': 1}

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pydantic import BaseModel, Field
-from app.models.complaint import Complaint, ComplaintType
+from app.models.complaint import Complaint, ComplaintType, ComplaintOrganizerRanking
 from typing import Optional
 
 
@@ -13,6 +13,18 @@ class ComplaintSchemaBase(BaseModel):
 
 class ComplaintCreateSchema(ComplaintSchemaBase):
     pass
+
+
+class ComplaintOrganizerRankingSchema(BaseModel):
+    organizer_id: str = Field(..., min_length=1)
+    complaints: int
+
+    @classmethod
+    def from_model(cls, complaint: ComplaintOrganizerRanking) -> ComplaintSchema:
+        return ComplaintOrganizerRankingSchema(
+            organizer_id=complaint.organizer_id,
+            complaints=complaint.complaints,
+        )
 
 
 class ComplaintSchema(ComplaintSchemaBase):

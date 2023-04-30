@@ -10,6 +10,16 @@ class ComplaintType(Enum):
     OTHER = "Otros"
 
 
+class ComplaintOrganizerRanking:
+    def __init__(
+        self,
+        organizer_id: str,
+        complaints: int,
+    ):
+        self.organizer_id = organizer_id
+        self.complaints = complaints
+
+
 class Complaint:
     def __init__(
         self,

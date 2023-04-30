@@ -1,4 +1,8 @@
-from app.schemas.complaints import ComplaintCreateSchema, ComplaintSchema
+from app.schemas.complaints import (
+    ComplaintCreateSchema,
+    ComplaintSchema,
+    ComplaintOrganizerRankingSchema,
+)
 from app.models.complaint import Complaint
 from app.repositories.complaints import (
     ComplaintRepository,
@@ -67,3 +71,13 @@ class GetComplaintCommand:
     def execute(self) -> List[ComplaintSchema]:
         complaint = self.complaint_repository.get_complaint(self.complaint_id)
         return ComplaintSchema.from_model(complaint)
+
+
+class GetComplaintsRankingByOrganizerCommand:
+    def __init__(self, complaint_repository: ComplaintRepository):
+        self.complaint_repository = complaint_repository
+
+    def execute(self) -> List[ComplaintSchema]:
+        ranking = self.complaint_repository.get_complaints_ranking_by_organizer()
+        ranking = [ComplaintOrganizerRankingSchema.from_model(rank) for rank in ranking]
+        return ranking
