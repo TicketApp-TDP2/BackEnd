@@ -9,12 +9,14 @@ from app.schemas.event import (
     EventCreateSchema,
     EventSchema,
     SearchEvent,
+    EventUpdateSchema,
 )
 from app.commands.events import (
     CreateEventCommand,
     GetEventCommand,
     PublishEventCommand,
     CancelEventCommand,
+    UpdateEventCommand,
 )
 from app.utils.error import TicketAppError
 
@@ -124,3 +126,23 @@ async def cancel_event(id: str):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Error"
         )
+
+
+@router.put(
+    '/events/{id}',
+    status_code=status.HTTP_201_CREATED,
+    response_model=EventSchema,
+    tags=["Events"],
+)
+async def update_event(id: str, update_body: EventUpdateSchema):
+    try:
+        repository = PersistentEventRepository()
+        user = UpdateEventCommand(repository, update_body, id).execute()
+    except TicketAppError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Error"
+        )
+    return user

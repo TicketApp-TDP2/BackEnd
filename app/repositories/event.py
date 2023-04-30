@@ -72,6 +72,10 @@ class EventRepository(ABC):
     def update_verified_vacants(self, id: str, verified_vacants: int) -> Event:
         pass
 
+    @abstractmethod
+    def update_event(self, id: str, event: Event) -> Event:
+        pass
+
 
 class PersistentEventRepository(EventRepository):
     def __init__(self):
@@ -122,6 +126,11 @@ class PersistentEventRepository(EventRepository):
         event.verified_vacants = verified_vacants
         data = self.__serialize_event(event)
         self.events.update_one({'_id': id}, {'$set': data})
+        return event
+
+    def update_event(self, event: Event) -> Event:
+        data = self.__serialize_event(event)
+        self.events.update_one({'_id': event.id}, {'$set': data})
         return event
 
     def __serialize_search(self, search: Search) -> dict:

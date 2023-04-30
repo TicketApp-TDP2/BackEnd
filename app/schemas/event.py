@@ -56,6 +56,21 @@ class EventCreateSchema(EventSchemaBase):
     pass
 
 
+class EventUpdateSchema(BaseModel):
+    name: Optional[str] = Field(..., min_length=3)
+    description: Optional[str] = Field(..., min_length=3)
+    location: Optional[LocationSchema]
+    type: Optional[Type]
+    images: Optional[List[str]] = Field(..., min_length=1)
+    preview_image: Optional[str] = Field(..., min_length=1)
+    date: Optional[date]
+    start_time: Optional[time]
+    end_time: Optional[time]
+    agenda: Optional[List[AgendaSchema]]
+    vacants: Optional[int] = Field(..., ge=1)
+    FAQ: Optional[List[FaqSchema]]
+
+
 class EventSchema(EventSchemaBase):
     id: str = Field(..., min_length=1)
     vacants_left: int = Field(..., ge=0)

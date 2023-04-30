@@ -1,10 +1,7 @@
 import json
 from typing import List
 from app.models.event import Agenda, Event, Faq, Location, State
-from app.schemas.event import (
-    EventCreateSchema,
-    EventSchema,
-)
+from app.schemas.event import EventCreateSchema, EventSchema, EventUpdateSchema
 from .errors import (
     EventAlreadyExistsError,
     EventNotFoundError,
@@ -15,6 +12,8 @@ from .errors import (
     EventNotBorradorError,
     TooManyImagesError,
     TooManyFaqsError,
+    EventCannotBeUpdatedError,
+    VacantsCannotBeUpdatedError,
 )
 from app.repositories.event import (
     EventRepository,
@@ -177,4 +176,83 @@ class CancelEventCommand:
         if not exists:
             raise EventNotFoundError
         event = self.event_repository.update_state_event(self.id, State.Cancelado)
+        return EventSchema.from_model(event)
+
+
+class UpdateEventCommand:
+    def __init__(
+        self,
+        event_repository: EventRepository,
+        update: EventUpdateSchema,
+        id: str,
+    ):
+        self.event_repository = event_repository
+        self.update = update
+        self.id = id
+
+    def execute(self) -> EventSchema:
+        event = self.event_repository.get_event(self.id)
+        if event.state != State.Borrador and event.state != State.Publicado:
+            raise EventCannotBeUpdatedError
+        if (
+            self.update.vacants
+            and self.update.vacants < event.vacants - event.vacants_left
+        ):
+            raise VacantsCannotBeUpdatedError
+        if self.update.location:
+            location = Location(
+                description=self.update.location.description,
+                lat=self.update.location.lat,
+                lng=self.update.location.lng,
+            )
+        if self.update.agenda:
+            agenda = [
+                Agenda(
+                    time_init=element.time_init,
+                    time_end=element.time_end,
+                    owner=element.owner,
+                    title=element.title,
+                    description=element.description,
+                )
+                for element in self.update.agenda
+            ]
+        if self.update.FAQ:
+            faq = [
+                Faq(
+                    question=element.question,
+                    answer=element.answer,
+                )
+                for element in self.update.FAQ
+            ]
+            if len(faq) > 30:
+                raise TooManyFaqsError
+        event = Event(
+            id=event.id,
+            name=self.update.name if self.update.name else event.name,
+            description=self.update.description
+            if self.update.description
+            else event.description,
+            location=location if self.update.location else event.location,
+            type=self.update.type if self.update.type else event.type,
+            images=self.update.images if self.update.images else event.images,
+            preview_image=self.update.preview_image
+            if self.update.preview_image
+            else event.preview_image,
+            date=self.update.date if self.update.date else event.date,
+            organizer=event.organizer,
+            start_time=self.update.start_time
+            if self.update.start_time
+            else event.start_time,
+            end_time=self.update.end_time if self.update.end_time else event.end_time,
+            agenda=agenda if self.update.agenda else event.agenda,
+            vacants=self.update.vacants if self.update.vacants else event.vacants,
+            vacants_left=(self.update.vacants - (event.vacants - event.vacants_left))
+            if self.update.vacants
+            else event.vacants_left,
+            FAQ=faq if self.update.FAQ else event.FAQ,
+            state=event.state,
+            verified_vacants=event.verified_vacants,
+        )
+        event = self.event_repository.update_event(event)
+
         return EventSchema.from_model(event)

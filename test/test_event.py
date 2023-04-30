@@ -9,6 +9,7 @@ import datetime
 client = TestClient(app)
 
 URI = 'api/events'
+BOOKING_URI = 'api/bookings'
 
 
 def create_event_body(fields={}):
@@ -741,3 +742,264 @@ def test_cancel_non_existing_event():
     response = client.put(f"{URI}/1/cancel")
     assert response.status_code == 400
     assert response.json()['detail'] == 'event_not_found'
+
+
+def create_updated_body(fields):
+    body = {
+        'name': 'new_aName',
+        'description': 'new_aDescription',
+        'location': {
+            'description': 'new_a location description',
+            'lat': 24.4,
+            'lng': 33.23,
+        },
+        'type': 'Arte y Cultura',
+        'images': ['new_image1', 'image2', 'image3'],
+        'preview_image': 'new_preview_image',
+        'date': '2023-03-29',
+        'start_time': '10:00:00',
+        'end_time': '13:00:00',
+        'agenda': [
+            {
+                'time_init': '10:00',
+                'time_end': '13:00',
+                'owner': 'new Pepe Cibrian',
+                'title': 'new Noche de teatro en Bs As',
+                'description': 'new Una noche de teatro unica',
+            }
+        ],
+        'vacants': 4,
+        'FAQ': [
+            {
+                'question': 'new se pueden llevar alimentos?',
+                'answer': 'new No. No se permiten alimentos ni bebidas en el lugar',
+            }
+        ],
+    }
+    for k, v in fields.items():
+        body[k] = v
+    return body
+
+
+def test_event_update_borrador(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+
+    body = create_event_body({"date": "2024-02-02"})
+    event = client.post(URI, json=body).json()
+    id = event["id"]
+
+    new_body = create_updated_body({"date": "2024-02-03", "vacants": 5})
+    response = client.put(URI + f"/{id}", json=new_body)
+
+    assert response.status_code == 201
+    data = response.json()
+    add_event_fields(
+        new_body,
+        {
+            "id": event["id"],
+            "state": "Borrador",
+            "vacants_left": 5,
+            "verified_vacants": event["verified_vacants"],
+            "organizer": event["organizer"],
+        },
+    )
+    assert data == new_body
+
+
+def test_event_update_publicado(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+
+    body = create_event_body({"date": "2024-02-02"})
+    event = client.post(URI, json=body).json()
+    id = event["id"]
+    client.put(URI + f"/{id}/publish")
+
+    new_body = create_updated_body({"date": "2024-02-03", "vacants": 5})
+    response = client.put(URI + f"/{id}", json=new_body)
+
+    assert response.status_code == 201
+    data = response.json()
+    add_event_fields(
+        new_body,
+        {
+            "id": event["id"],
+            "state": "Publicado",
+            "vacants_left": 5,
+            "verified_vacants": event["verified_vacants"],
+            "organizer": event["organizer"],
+        },
+    )
+    assert data == new_body
+
+
+def test_event_update_cancelado(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+
+    body = create_event_body({"date": "2024-02-02"})
+    id = client.post(URI, json=body).json()["id"]
+    client.put(URI + f"/{id}/cancel")
+
+    new_body = create_updated_body({"date": "2024-02-03"})
+    response = client.put(URI + f"/{id}", json=new_body)
+
+    assert response.status_code == 400
+    assert response.json()['detail'] == 'event_cannot_be_updated'
+
+
+def test_event_update_terminado(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+
+    body = create_event_body({"date": "2022-02-02"})
+    event = client.post(URI, json=body).json()
+    client.get(URI)
+    id = event["id"]
+
+    new_body = create_updated_body({"date": "2022-02-01"})
+    response = client.put(URI + f"/{id}", json=new_body)
+
+    assert response.status_code == 400
+    assert response.json()['detail'] == 'event_cannot_be_updated'
+
+
+def test_update_invalid(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+    body = create_event_body({"date": "2024-02-02"})
+    event = client.post(URI, json=body).json()
+    id = event["id"]
+
+    new_body = create_updated_body({"date": "2024-02-02"})
+
+    invalid_variations = {
+        'name': ['', 'a'],
+        'description': ['', 'a'],
+        'location': [
+            '',
+            3,
+            {
+                'description': 'a location description',
+                'lng': 32.23,
+            },
+            {
+                'description': 'a location description',
+                'lng': 32.23,
+                'lat': '',
+            },
+        ],
+        'type': ['', 'NoExistente'],
+        'images': [''],
+        'preview_image': [''],
+        'date': ['', 'a', '-03-29', '2023-03-29T16:00:00'],
+        'start_time': ['', 'a', '25:00:00'],
+        'end_time': ['', 'a', '25:00:00'],
+        'agenda': [
+            [
+                {
+                    'time_init': '09:00',
+                    'time_end': '12:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                }
+            ],
+            [
+                {
+                    'time_init': '09:00',
+                    'time_end': '12:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                },
+                {
+                    'time_init': '09:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                },
+            ],
+        ],
+        'vacants': ['', 'a', 0],
+        'FAQ': [
+            [
+                {
+                    'question': 'se pueden llevar alimentos?',
+                }
+            ],
+            [
+                {'question': 'se pueden llevar alimentos?', 'answer': 'Si se puede'},
+                {'question': 'Otra pregunta'},
+            ],
+        ],
+    }
+
+    invalid_bodies = generate_invalid(new_body, invalid_variations)
+
+    # NOTE: If one of this tests fails, we don´t get enough information
+    # we just know that the hole suit failed.
+
+    for inv_body in invalid_bodies:
+        response = client.put(URI + f"/{id}", json=inv_body)
+        try:
+            assert response.status_code == 422
+        except Exception:
+            print("Failed body: \n")
+            pprint(inv_body)
+            raise
+
+
+def update_event_with_less_vacants_than_left(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+
+    body = create_event_body({"date": "2024-02-02", "vacants": 3})
+    event = client.post(URI, json=body).json()
+    client.put(URI + f"/{event['id']}/publish")
+    booking_body = {
+        "event_id": event['id'],
+        "reserver_id": "123",
+    }
+
+    client.post(BOOKING_URI, json=booking_body)
+    booking_body2 = {
+        "event_id": event['id'],
+        "reserver_id": "1232",
+    }
+
+    client.post(BOOKING_URI, json=booking_body2)
+    id = event["id"]
+
+    new_body = create_updated_body({"date": "2024-02-03", "vacants": 1})
+    response = client.put(URI + f"/{id}", json=new_body)
+
+    assert response.status_code == 400
+    assert response.json()['detail'] == 'vacants_cannot_be_less_than_bookings'
+
+
+def test_event_update_vacants(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+
+    body = create_event_body({"date": "2024-02-02"})
+    event = client.post(URI, json=body).json()
+    client.put(URI + f"/{event['id']}/publish")
+    id = event["id"]
+
+    booking_body = {
+        "event_id": event['id'],
+        "reserver_id": "123",
+    }
+
+    client.post(BOOKING_URI, json=booking_body)
+
+    new_body = create_updated_body({"date": "2024-02-03", "vacants": 5})
+    response = client.put(URI + f"/{id}", json=new_body)
+
+    assert response.status_code == 201
+    data = response.json()
+    add_event_fields(
+        new_body,
+        {
+            "id": event["id"],
+            "state": "Publicado",
+            "vacants_left": 4,
+            "verified_vacants": event["verified_vacants"],
+            "organizer": event["organizer"],
+        },
+    )
+    assert data == new_body
