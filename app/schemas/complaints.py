@@ -7,6 +7,7 @@ from app.models.complaint import (
     ComplaintEventRanking,
 )
 from typing import Optional
+from datetime import date
 
 
 class ComplaintSchemaBase(BaseModel):
@@ -51,6 +52,7 @@ class ComplaintEventRankingSchema(BaseModel):
 class ComplaintSchema(ComplaintSchemaBase):
     id: str = Field(..., min_length=1)
     organizer_id: str = Field(..., min_length=1)
+    date: date
 
     @classmethod
     def from_model(cls, complaint: Complaint) -> ComplaintSchema:
@@ -61,4 +63,5 @@ class ComplaintSchema(ComplaintSchemaBase):
             type=ComplaintType(complaint.type),
             description=complaint.description,
             organizer_id=complaint.organizer_id,
+            date=complaint.date,
         )

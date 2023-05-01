@@ -8,6 +8,7 @@ from app.models.complaint import (
 )
 from app.repositories.errors import ComplaintNotFoundError
 from bson.son import SON
+from datetime import date
 
 
 class ComplaintRepository(ABC):
@@ -91,6 +92,7 @@ class PersistentComplaintRepository(ComplaintRepository):
             "type": complaint.type.value,
             "description": complaint.description,
             "organizer_id": complaint.organizer_id,
+            "date": str(complaint.date),
         }
 
         return serialized
@@ -103,4 +105,5 @@ class PersistentComplaintRepository(ComplaintRepository):
             type=ComplaintType(data['type']),
             description=data['description'],
             organizer_id=data['organizer_id'],
+            date=date.fromisoformat(data['date']),
         )

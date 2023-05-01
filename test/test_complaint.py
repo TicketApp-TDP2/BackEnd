@@ -119,6 +119,7 @@ def test_complaint_create_succesfully():
     assert 'id' in response_data
     complaint_body["id"] = response_data["id"]
     complaint_body["organizer_id"] = organizer['id']
+    complaint_body["date"] = response_data["date"]
     assert response_data == complaint_body
 
 
@@ -141,6 +142,7 @@ def test_complaint_create_without_description():
     complaint_body["id"] = response_data["id"]
     complaint_body["description"] = ""
     complaint_body["organizer_id"] = organizer['id']
+    complaint_body["date"] = response_data["date"]
     assert response_data == complaint_body
 
 
@@ -202,12 +204,14 @@ def test_complaint_create_twice():
     assert 'id' in response_data1
     complaint_body1["id"] = response_data1["id"]
     complaint_body1["organizer_id"] = organizer['id']
+    complaint_body1["date"] = response_data1["date"]
     assert response_data1 == complaint_body1
 
     assert response2.status_code == 201
     assert 'id' in response_data2
     complaint_body2["id"] = response_data2["id"]
     complaint_body2["organizer_id"] = organizer['id']
+    complaint_body2["date"] = response_data2["date"]
     assert response_data2 == complaint_body2
 
 
@@ -240,12 +244,14 @@ def test_complaint_create_with_2_complainers():
     assert 'id' in response_data1
     complaint_body1["id"] = response_data1["id"]
     complaint_body1["organizer_id"] = organizer['id']
+    complaint_body1["date"] = response_data1["date"]
     assert response_data1 == complaint_body1
 
     assert response2.status_code == 201
     assert 'id' in response_data2
     complaint_body2["id"] = response_data2["id"]
     complaint_body2["organizer_id"] = organizer['id']
+    complaint_body2["date"] = response_data2["date"]
     assert response_data2 == complaint_body2
 
 
@@ -291,6 +297,7 @@ def test_complaint_get_one():
     data = response.json()
     complaint_body["id"] = id
     complaint_body["organizer_id"] = organizer['id']
+    complaint_body["date"] = data["date"]
     assert data == complaint_body
 
 
@@ -318,11 +325,13 @@ def test_complaint_get_two():
     id1 = response.json()['id']
     complaint_body1["id"] = id1
     complaint_body1["organizer_id"] = organizer['id']
+    complaint_body1["date"] = response.json()["date"]
 
     response = client.post(URI, json=complaint_body2)
     id2 = response.json()['id']
     complaint_body2["id"] = id2
     complaint_body2["organizer_id"] = organizer['id']
+    complaint_body2["date"] = response.json()["date"]
 
     response = client.get(URI + f"/{id1}")
     assert response.status_code == 200
@@ -363,6 +372,7 @@ def test_complaint_get_by_organizer_one():
     assert len(data) == 1
     complaint_body["id"] = data[0]["id"]
     complaint_body["organizer_id"] = organizer['id']
+    complaint_body["date"] = data[0]["date"]
     assert data[0] == complaint_body
 
 
@@ -395,8 +405,10 @@ def test_complaint_get_by_organizer_two():
     assert len(data) == 2
     complaint_body1["id"] = data[0]["id"]
     complaint_body1["organizer_id"] = organizer['id']
+    complaint_body1["date"] = data[0]["date"]
     complaint_body2["id"] = data[1]["id"]
     complaint_body2["organizer_id"] = organizer['id']
+    complaint_body2["date"] = data[1]["date"]
     assert data[0] == complaint_body1
     assert data[1] == complaint_body2
 
@@ -431,6 +443,7 @@ def test_get_complaint_by_organizer_two_organizers():
     assert len(data) == 1
     complaint_body1["id"] = data[0]["id"]
     complaint_body1["organizer_id"] = organizer['id']
+    complaint_body1["date"] = data[0]["date"]
     assert data[0] == complaint_body1
 
 
@@ -462,6 +475,7 @@ def test_complaint_get_by_event_one():
     assert len(data) == 1
     complaint_body["id"] = data[0]["id"]
     complaint_body["organizer_id"] = organizer['id']
+    complaint_body["date"] = data[0]["date"]
     assert data[0] == complaint_body
 
 
@@ -493,8 +507,10 @@ def test_complaint_get_by_event_two():
     assert len(data) == 2
     complaint_body1["id"] = data[0]["id"]
     complaint_body1["organizer_id"] = organizer['id']
+    complaint_body1["date"] = data[0]["date"]
     complaint_body2["id"] = data[1]["id"]
     complaint_body2["organizer_id"] = organizer['id']
+    complaint_body2["date"] = data[1]["date"]
     assert data[0] == complaint_body1
     assert data[1] == complaint_body2
 
@@ -529,6 +545,7 @@ def test_get_complaint_by_event_two_events():
     assert len(data) == 1
     complaint_body1["id"] = data[0]["id"]
     complaint_body1["organizer_id"] = organizer['id']
+    complaint_body1["date"] = data[0]["date"]
     assert data[0] == complaint_body1
 
 
@@ -695,3 +712,23 @@ def test_complaint_ranking_by_event_two_events():
     assert len(data) == 2
     assert data[0] == {'event_id': event2['id'], 'complaints': 2}
     assert data[1] == {'event_id': event['id'], 'complaints': 1}
+
+
+def test_create_complaint_with_valid_date(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
+    event = create_event({'organizer': organizer['id']})
+
+    complaint_body = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+    }
+
+    response = client.post(URI, json=complaint_body)
+    response_data = response.json()
+
+    assert response.status_code == 201
+    assert response_data["date"] == "2023-02-02"

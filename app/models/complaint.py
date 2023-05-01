@@ -1,6 +1,8 @@
 from __future__ import annotations
 from enum import Enum
 import uuid
+from datetime import date
+from app.utils.now import getNow
 
 
 class ComplaintType(Enum):
@@ -39,6 +41,7 @@ class Complaint:
         type: ComplaintType,
         description: str,
         organizer_id: str,
+        date: date,
     ):
         self.event_id = event_id
         self.complainer_id = complainer_id
@@ -46,6 +49,7 @@ class Complaint:
         self.type = type
         self.description = description
         self.organizer_id = organizer_id
+        self.date = date
 
     @classmethod
     def new(
@@ -63,4 +67,5 @@ class Complaint:
             type=type,
             description=description if description else "",
             organizer_id=organizer_id,
+            date=getNow().date(),
         )
