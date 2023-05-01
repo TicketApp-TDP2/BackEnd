@@ -10,6 +10,11 @@ from typing import Optional
 from datetime import date
 
 
+class FilterComplaint(BaseModel):
+    start: Optional[str]
+    end: Optional[str]
+
+
 class ComplaintSchemaBase(BaseModel):
     event_id: str = Field(..., min_length=1)
     complainer_id: str = Field(..., min_length=1)

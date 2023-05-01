@@ -5,9 +5,7 @@ from app.schemas.complaints import (
     ComplaintEventRankingSchema,
 )
 from app.models.complaint import Complaint
-from app.repositories.complaints import (
-    ComplaintRepository,
-)
+from app.repositories.complaints import ComplaintRepository, Filter
 from app.repositories.event import EventRepository
 from app.config.logger import setup_logger
 from typing import List
@@ -75,11 +73,14 @@ class GetComplaintCommand:
 
 
 class GetComplaintsRankingByOrganizerCommand:
-    def __init__(self, complaint_repository: ComplaintRepository):
+    def __init__(self, complaint_repository: ComplaintRepository, filter: Filter):
         self.complaint_repository = complaint_repository
+        self.filter = filter
 
     def execute(self) -> List[ComplaintOrganizerRankingSchema]:
-        ranking = self.complaint_repository.get_complaints_ranking_by_organizer()
+        ranking = self.complaint_repository.get_complaints_ranking_by_organizer(
+            self.filter
+        )
         return [ComplaintOrganizerRankingSchema.from_model(rank) for rank in ranking]
 
 

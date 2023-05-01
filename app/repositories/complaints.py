@@ -9,6 +9,17 @@ from app.models.complaint import (
 from app.repositories.errors import ComplaintNotFoundError
 from bson.son import SON
 from datetime import date
+from typing import Optional
+
+
+class Filter:
+    def __init__(
+        self,
+        start: Optional[date],
+        end: Optional[date],
+    ):
+        self.start = start
+        self.end = end
 
 
 class ComplaintRepository(ABC):
@@ -29,7 +40,9 @@ class ComplaintRepository(ABC):
         pass
 
     @abstractmethod
-    def get_complaints_ranking_by_organizer(self) -> list[ComplaintOrganizerRanking]:
+    def get_complaints_ranking_by_organizer(
+        self, filter: Filter
+    ) -> list[ComplaintOrganizerRanking]:
         pass
 
     @abstractmethod
@@ -61,13 +74,18 @@ class PersistentComplaintRepository(ComplaintRepository):
             raise ComplaintNotFoundError
         return self.__deserialize_complaint(complaint)
 
-    def get_complaints_ranking_by_organizer(self) -> list[ComplaintOrganizerRanking]:
-        ranking = self.complaints.aggregate(
-            [
-                {'$group': {'_id': '$organizer_id', 'count': {'$sum': 1}}},
-                {'$sort': SON([("count", -1), ("_id", -1)])},
-            ]
-        )
+    def get_complaints_ranking_by_organizer(
+        self, filter: Filter
+    ) -> list[ComplaintOrganizerRanking]:
+        pipeline = []
+        if filter.start:
+            pipeline.append({'$match': {'date': {'$gte': filter.start.isoformat()}}})
+        if filter.end:
+            pipeline.append({'$match': {'date': {'$lte': filter.end.isoformat()}}})
+        pipeline.append({'$group': {'_id': '$organizer_id', 'count': {'$sum': 1}}})
+        pipeline.append({'$sort': SON([("count", -1), ("_id", -1)])})
+
+        ranking = self.complaints.aggregate(pipeline)
         return [
             ComplaintOrganizerRanking(organizer['_id'], organizer['count'])
             for organizer in ranking

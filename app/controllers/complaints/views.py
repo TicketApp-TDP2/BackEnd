@@ -1,13 +1,14 @@
 from fastapi.exceptions import HTTPException
 from app.repositories.complaints import PersistentComplaintRepository
 from app.repositories.event import PersistentEventRepository
-from fastapi import status, APIRouter
+from fastapi import status, APIRouter, Depends
 from app.config.logger import setup_logger
 from app.schemas.complaints import (
     ComplaintCreateSchema,
     ComplaintSchema,
     ComplaintOrganizerRankingSchema,
     ComplaintEventRankingSchema,
+    FilterComplaint,
 )
 from app.commands.complaints import (
     CreateComplaintCommand,
@@ -19,6 +20,7 @@ from app.commands.complaints import (
 )
 from app.utils.error import TicketAppError
 from typing import List
+from app.parsers.filter_parser import FilterComplaintsParser
 
 
 logger = setup_logger(name=__name__)
@@ -114,10 +116,11 @@ async def get_complaint_by_event(id: str):
     response_model=List[ComplaintOrganizerRankingSchema],
     tags=["Complaints"],
 )
-async def get_complaint_ranking_by_organizer():
+async def get_complaint_ranking_by_organizer(params: FilterComplaint = Depends()):
     try:
+        filter = FilterComplaintsParser().parse(params)
         repository = PersistentComplaintRepository()
-        ranking = GetComplaintsRankingByOrganizerCommand(repository).execute()
+        ranking = GetComplaintsRankingByOrganizerCommand(repository, filter).execute()
     except TicketAppError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:

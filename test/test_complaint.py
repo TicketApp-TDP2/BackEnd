@@ -732,3 +732,51 @@ def test_create_complaint_with_valid_date(monkeypatch):
 
     assert response.status_code == 201
     assert response_data["date"] == "2023-02-02"
+
+
+def test_complaint_ranking_by_organizer_two_with_date_filter(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 1, "hour": 15})
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
+    event = create_event({'organizer': organizer['id']})
+
+    complaint_body = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+    }
+
+    client.post(URI, json=complaint_body)
+    mock_date(monkeypatch, {"year": 2023, "month": 4, "day": 1, "hour": 15})
+    client.post(URI, json=complaint_body)
+
+    response = client.get(URI + "/ranking/organizer?start=2023-01-01&end=2023-03-01")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0] == {'organizer_id': organizer['id'], 'complaints': 1}
+
+
+def test_complaint_ranking_by_organizer_two_with_date_filter_end(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 1, "hour": 15})
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
+    event = create_event({'organizer': organizer['id']})
+
+    complaint_body = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+    }
+
+    client.post(URI, json=complaint_body)
+    mock_date(monkeypatch, {"year": 2023, "month": 4, "day": 1, "hour": 15})
+    client.post(URI, json=complaint_body)
+
+    response = client.get(URI + "/ranking/organizer?start=2023-03-01&end=2023-05-01")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0] == {'organizer_id': organizer['id'], 'complaints': 1}
