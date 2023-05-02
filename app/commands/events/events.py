@@ -15,7 +15,7 @@ from .errors import (
     EventCannotBeUpdatedError,
     VacantsCannotBeUpdatedError,
     EventCannotBeSuspendedError,
-    EventCannotBeDeSuspendedError,
+    EventCannotBeUnSuspendedError,
 )
 from app.repositories.event import (
     EventRepository,
@@ -285,7 +285,7 @@ class SuspendEventCommand:
         return EventSchema.from_model(event)
 
 
-class DeSuspendEventCommand:
+class UnSuspendEventCommand:
     def __init__(self, event_repository: EventRepository, _id: str):
         self.event_repository = event_repository
         self.id = _id
@@ -298,5 +298,5 @@ class DeSuspendEventCommand:
         if event.state == State.Suspendido:
             event = self.event_repository.update_state_event(self.id, State.Publicado)
         else:
-            raise EventCannotBeDeSuspendedError
+            raise EventCannotBeUnSuspendedError
         return EventSchema.from_model(event)

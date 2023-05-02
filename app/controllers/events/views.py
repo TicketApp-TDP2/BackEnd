@@ -18,7 +18,7 @@ from app.commands.events import (
     CancelEventCommand,
     UpdateEventCommand,
     SuspendEventCommand,
-    DeSuspendEventCommand,
+    UnSuspendEventCommand,
 )
 from app.utils.error import TicketAppError
 
@@ -171,15 +171,15 @@ async def suspend_event(id: str):
 
 
 @router.put(
-    '/events/{id}/desuspend',
+    '/events/{id}/unsuspend',
     status_code=status.HTTP_200_OK,
     response_model=EventSchema,
     tags=["Events"],
 )
-async def suspend_event(id: str):
+async def unsuspend_event(id: str):
     try:
         repository = PersistentEventRepository()
-        event = DeSuspendEventCommand(repository, id).execute()
+        event = UnSuspendEventCommand(repository, id).execute()
         return event
     except TicketAppError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

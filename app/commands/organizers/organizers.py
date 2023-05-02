@@ -34,6 +34,7 @@ class CreateOrganizerCommand:
             about_me=self.organizer_data.about_me,
             profile_picture=self.organizer_data.profile_picture,
             id=self.organizer_data.id,
+            suspended=False,
         )
         already_exists = self.organizer_repository.organizer_exists_by_email(
             organizer.email
@@ -80,7 +81,34 @@ class UpdateOrganizerCommand:
             profession=self.update.profession or organizer.profession,
             about_me=self.update.about_me or organizer.about_me,
             profile_picture=self.update.profile_picture,
+            suspended=organizer.suspended,
         )
         organizer = self.organizer_repository.update_organizer(organizer)
 
+        return OrganizerSchema.from_model(organizer)
+
+
+class SuspendOrganizerCommand:
+    def __init__(self, organizer_repository: OrganizerRepository, _id: str):
+        self.organizer_repository = organizer_repository
+        self.id = _id
+
+    def execute(self) -> OrganizerSchema:
+        exists = self.organizer_repository.organizer_exists(self.id)
+        if not exists:
+            raise OrganizerNotFoundError
+        organizer = self.organizer_repository.suspend_organizer(self.id)
+        return OrganizerSchema.from_model(organizer)
+
+
+class UnSuspendOrganizerCommand:
+    def __init__(self, organizer_repository: OrganizerRepository, _id: str):
+        self.organizer_repository = organizer_repository
+        self.id = _id
+
+    def execute(self) -> OrganizerSchema:
+        exists = self.organizer_repository.organizer_exists(self.id)
+        if not exists:
+            raise OrganizerNotFoundError
+        organizer = self.organizer_repository.unsuspend_organizer(self.id)
         return OrganizerSchema.from_model(organizer)

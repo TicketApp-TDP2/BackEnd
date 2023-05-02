@@ -1053,49 +1053,49 @@ def test_suspend_non_existing_event():
     assert response.json()['detail'] == 'event_not_found'
 
 
-def test_desuspend_event():
+def test_unsuspend_event():
     event = create_event()
     client.put(f"{URI}/{event['id']}/publish")
     client.put(f"{URI}/{event['id']}/suspend")
-    response = client.put(f"{URI}/{event['id']}/desuspend")
+    response = client.put(f"{URI}/{event['id']}/unsuspend")
     data = response.json()
     assert response.status_code == 200
     assert data['state'] == 'Publicado'
 
 
-def test_desuspend_event_publicado():
+def test_unsuspend_event_publicado():
     event = create_event()
     client.put(f"{URI}/{event['id']}/publish")
-    response = client.put(f"{URI}/{event['id']}/desuspend")
+    response = client.put(f"{URI}/{event['id']}/unsuspend")
     assert response.status_code == 400
-    assert response.json()['detail'] == 'event_cannot_be_desuspended'
+    assert response.json()['detail'] == 'event_cannot_be_unsuspended'
 
 
-def test_desuspend_event_cancelado():
+def test_unsuspend_event_cancelado():
     event = create_event()
     client.put(f"{URI}/{event['id']}/cancel")
-    response = client.put(f"{URI}/{event['id']}/desuspend")
+    response = client.put(f"{URI}/{event['id']}/unsuspend")
     assert response.status_code == 400
-    assert response.json()['detail'] == 'event_cannot_be_desuspended'
+    assert response.json()['detail'] == 'event_cannot_be_unsuspended'
 
 
-def test_desuspend_event_borrador():
+def test_unsuspend_event_borrador():
     event = create_event()
-    response = client.put(f"{URI}/{event['id']}/desuspend")
+    response = client.put(f"{URI}/{event['id']}/unsuspend")
     assert response.status_code == 400
-    assert response.json()['detail'] == 'event_cannot_be_desuspended'
+    assert response.json()['detail'] == 'event_cannot_be_unsuspended'
 
 
-def test_desuspend_event_finalizado(monkeypatch):
+def test_unsuspend_event_finalizado(monkeypatch):
     mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
     event = create_event({"date": "2023-02-01"})
     client.get(f"{URI}/{event['id']}")
-    response = client.put(f"{URI}/{event['id']}/desuspend")
+    response = client.put(f"{URI}/{event['id']}/unsuspend")
     assert response.status_code == 400
-    assert response.json()['detail'] == 'event_cannot_be_desuspended'
+    assert response.json()['detail'] == 'event_cannot_be_unsuspended'
 
 
-def test_desuspend_non_existing_event():
-    response = client.put(f"{URI}/123/desuspend")
+def test_unsuspend_non_existing_event():
+    response = client.put(f"{URI}/123/unsuspend")
     assert response.status_code == 400
     assert response.json()['detail'] == 'event_not_found'

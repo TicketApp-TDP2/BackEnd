@@ -73,7 +73,7 @@ class EventCannotBeSuspendedError(BusinessError):
         super().__init__(msg)
 
 
-class EventCannotBeDeSuspendedError(BusinessError):
+class EventCannotBeUnSuspendedError(BusinessError):
     def __init__(self):
-        msg = "event_cannot_be_desuspended"
+        msg = "event_cannot_be_unsuspended"
         super().__init__(msg)
