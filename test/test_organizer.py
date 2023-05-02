@@ -188,14 +188,14 @@ def test_unsuspend_organizer_twice():
 
 
 def test_suspend_non_existing_organizer():
-    response = client.put(URI + f"/123/suspend")
+    response = client.put(URI + "/123/suspend")
     assert response.status_code == 400
     data = response.json()
     assert data["detail"] == "organizer_not_found"
 
 
 def test_unsuspend_non_existing_organizer():
-    response = client.put(URI + f"/123/unsuspend")
+    response = client.put(URI + "/123/unsuspend")
     assert response.status_code == 400
     data = response.json()
     assert data["detail"] == "organizer_not_found"

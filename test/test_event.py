@@ -10,6 +10,24 @@ client = TestClient(app)
 
 URI = 'api/events'
 BOOKING_URI = 'api/bookings'
+ORGANIZER_URI = 'api/organizers'
+
+
+def create_organizer_body(fields={}):
+    body = {
+        'first_name': 'first_name',
+        'last_name': 'last_name',
+        'email': 'email@mail.com',
+        'profession': 'profession',
+        'about_me': 'about_me',
+        'profile_picture': 'profile_picture',
+        'id': '123',
+    }
+
+    for k, v in fields.items():
+        body[k] = v
+
+    return body
 
 
 def create_event_body(fields={}):
@@ -1099,3 +1117,141 @@ def test_unsuspend_non_existing_event():
     response = client.put(f"{URI}/123/unsuspend")
     assert response.status_code == 400
     assert response.json()['detail'] == 'event_not_found'
+
+
+def test_suspend_organizer_event(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+    organizer = create_organizer_body()
+    organizer = client.post(ORGANIZER_URI, json=organizer).json()
+    event = create_event({"organizer": organizer['id'], "date": "2024-02-01"})
+    client.put(f"{URI}/{event['id']}/publish")
+
+    client.put(f"{ORGANIZER_URI}/{organizer['id']}/suspend")
+    response = client.get(f"{URI}/{event['id']}")
+    data = response.json()
+    assert response.status_code == 200
+    assert data['state'] == 'Suspendido'
+
+
+def test_suspend_organizer_event_borrador(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+    organizer = create_organizer_body()
+    organizer = client.post(ORGANIZER_URI, json=organizer).json()
+    event = create_event({"organizer": organizer['id'], "date": "2024-02-01"})
+
+    client.put(f"{ORGANIZER_URI}/{organizer['id']}/suspend")
+    response = client.get(f"{URI}/{event['id']}")
+    data = response.json()
+    assert response.status_code == 200
+    assert data['state'] == 'Borrador'
+
+
+def test_suspend_organizer_event_cancelado(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+    organizer = create_organizer_body()
+    organizer = client.post(ORGANIZER_URI, json=organizer).json()
+    event = create_event({"organizer": organizer['id'], "date": "2024-02-01"})
+    client.put(f"{URI}/{event['id']}/cancel")
+
+    client.put(f"{ORGANIZER_URI}/{organizer['id']}/suspend")
+    response = client.get(f"{URI}/{event['id']}")
+    data = response.json()
+    assert response.status_code == 200
+    assert data['state'] == 'Cancelado'
+
+
+def test_suspend_organizer_event_terminado(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+    organizer = create_organizer_body()
+    organizer = client.post(ORGANIZER_URI, json=organizer).json()
+    event = create_event({"organizer": organizer['id'], "date": "2022-02-01"})
+
+    client.put(f"{ORGANIZER_URI}/{organizer['id']}/suspend")
+    response = client.get(f"{URI}/{event['id']}")
+    data = response.json()
+    assert response.status_code == 200
+    assert data['state'] == 'Finalizado'
+
+
+def test_suspend_organizer_events(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+    organizer = create_organizer_body()
+    organizer = client.post(ORGANIZER_URI, json=organizer).json()
+    event1 = create_event({"organizer": organizer['id'], "date": "2024-02-01"})
+    client.put(f"{URI}/{event1['id']}/publish")
+    event2 = create_event({"organizer": organizer['id'], "date": "2024-02-01"})
+    client.put(f"{URI}/{event2['id']}/publish")
+
+    client.put(f"{ORGANIZER_URI}/{organizer['id']}/suspend")
+    response = client.get(f"{URI}/{event1['id']}")
+    data = response.json()
+    assert response.status_code == 200
+    assert data['state'] == 'Suspendido'
+    response = client.get(f"{URI}/{event2['id']}")
+    data = response.json()
+    assert response.status_code == 200
+    assert data['state'] == 'Suspendido'
+
+
+def test_unsuspend_organizer_events(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+    organizer = create_organizer_body()
+    organizer = client.post(ORGANIZER_URI, json=organizer).json()
+    event1 = create_event({"organizer": organizer['id'], "date": "2024-02-01"})
+    client.put(f"{URI}/{event1['id']}/publish")
+    event2 = create_event({"organizer": organizer['id'], "date": "2024-02-01"})
+    client.put(f"{URI}/{event2['id']}/publish")
+
+    client.put(f"{ORGANIZER_URI}/{organizer['id']}/suspend")
+    client.put(f"{ORGANIZER_URI}/{organizer['id']}/unsuspend")
+    response = client.get(f"{URI}/{event1['id']}")
+    data = response.json()
+    assert response.status_code == 200
+    assert data['state'] == 'Publicado'
+    response = client.get(f"{URI}/{event2['id']}")
+    data = response.json()
+    assert response.status_code == 200
+    assert data['state'] == 'Publicado'
+
+
+def test_unsuspend_organizer_event_borrador(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+    organizer = create_organizer_body()
+    organizer = client.post(ORGANIZER_URI, json=organizer).json()
+    event1 = create_event({"organizer": organizer['id'], "date": "2024-02-01"})
+
+    client.put(f"{ORGANIZER_URI}/{organizer['id']}/suspend")
+    client.put(f"{ORGANIZER_URI}/{organizer['id']}/unsuspend")
+    response = client.get(f"{URI}/{event1['id']}")
+    data = response.json()
+    assert response.status_code == 200
+    assert data['state'] == 'Borrador'
+
+
+def test_unsuspend_organizer_event_cancelado(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+    organizer = create_organizer_body()
+    organizer = client.post(ORGANIZER_URI, json=organizer).json()
+    event1 = create_event({"organizer": organizer['id'], "date": "2024-02-01"})
+    client.put(f"{URI}/{event1['id']}/cancel")
+
+    client.put(f"{ORGANIZER_URI}/{organizer['id']}/suspend")
+    client.put(f"{ORGANIZER_URI}/{organizer['id']}/unsuspend")
+    response = client.get(f"{URI}/{event1['id']}")
+    data = response.json()
+    assert response.status_code == 200
+    assert data['state'] == 'Cancelado'
+
+
+def test_unsuspend_organizer_event_terminado(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+    organizer = create_organizer_body()
+    organizer = client.post(ORGANIZER_URI, json=organizer).json()
+    event1 = create_event({"organizer": organizer['id'], "date": "2022-02-01"})
+
+    client.put(f"{ORGANIZER_URI}/{organizer['id']}/suspend")
+    client.put(f"{ORGANIZER_URI}/{organizer['id']}/unsuspend")
+    response = client.get(f"{URI}/{event1['id']}")
+    data = response.json()
+    assert response.status_code == 200
+    assert data['state'] == 'Finalizado'

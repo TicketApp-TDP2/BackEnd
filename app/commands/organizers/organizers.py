@@ -4,12 +4,13 @@ from app.schemas.organizers import (
     OrganizerUpdateSchema,
 )
 from app.models.organizer import Organizer
+from app.models.event import State
 from .errors import OrganizerAlreadyExistsError, OrganizerNotFoundError
 from app.repositories.organizers import (
     OrganizerRepository,
 )
+from app.repositories.event import EventRepository, Search
 from app.config.logger import setup_logger
-import uuid
 
 logger = setup_logger(__name__)
 
@@ -89,26 +90,64 @@ class UpdateOrganizerCommand:
 
 
 class SuspendOrganizerCommand:
-    def __init__(self, organizer_repository: OrganizerRepository, _id: str):
+    def __init__(
+        self,
+        organizer_repository: OrganizerRepository,
+        _id: str,
+        event_repository: EventRepository,
+    ):
         self.organizer_repository = organizer_repository
         self.id = _id
+        self.event_repository = event_repository
 
     def execute(self) -> OrganizerSchema:
         exists = self.organizer_repository.organizer_exists(self.id)
         if not exists:
             raise OrganizerNotFoundError
         organizer = self.organizer_repository.suspend_organizer(self.id)
+        search = Search(
+            organizer=self.id,
+            type=None,
+            location=None,
+            limit=100000,
+            name=None,
+            only_published=False,
+            not_finished=False,
+        )
+        events = self.event_repository.search_events(search)
+        for event in events:
+            if event.state == State.Publicado:
+                self.event_repository.update_state_event(event.id, State.Suspendido)
         return OrganizerSchema.from_model(organizer)
 
 
 class UnSuspendOrganizerCommand:
-    def __init__(self, organizer_repository: OrganizerRepository, _id: str):
+    def __init__(
+        self,
+        organizer_repository: OrganizerRepository,
+        _id: str,
+        event_repository: EventRepository,
+    ):
         self.organizer_repository = organizer_repository
         self.id = _id
+        self.event_repository = event_repository
 
     def execute(self) -> OrganizerSchema:
         exists = self.organizer_repository.organizer_exists(self.id)
         if not exists:
             raise OrganizerNotFoundError
         organizer = self.organizer_repository.unsuspend_organizer(self.id)
+        search = Search(
+            organizer=self.id,
+            type=None,
+            location=None,
+            limit=100000,
+            name=None,
+            only_published=False,
+            not_finished=False,
+        )
+        events = self.event_repository.search_events(search)
+        for event in events:
+            if event.state == State.Suspendido:
+                self.event_repository.update_state_event(event.id, State.Publicado)
         return OrganizerSchema.from_model(organizer)

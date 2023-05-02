@@ -1,5 +1,6 @@
 from fastapi.exceptions import HTTPException
 from app.repositories.organizers import PersistentOrganizerRepository
+from app.repositories.event import PersistentEventRepository
 from fastapi import status, APIRouter
 from app.config.logger import setup_logger
 from app.schemas.organizers import (
@@ -92,7 +93,8 @@ async def update_organizer(id: str, update_body: OrganizerUpdateSchema):
 async def suspend_organizer(id: str):
     try:
         repository = PersistentOrganizerRepository()
-        organizer = SuspendOrganizerCommand(repository, id).execute()
+        event_repository = PersistentEventRepository()
+        organizer = SuspendOrganizerCommand(repository, id, event_repository).execute()
         return organizer
     except TicketAppError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -112,7 +114,10 @@ async def suspend_organizer(id: str):
 async def unsuspend_organizer(id: str):
     try:
         repository = PersistentOrganizerRepository()
-        organizer = UnSuspendOrganizerCommand(repository, id).execute()
+        event_repository = PersistentEventRepository()
+        organizer = UnSuspendOrganizerCommand(
+            repository, id, event_repository
+        ).execute()
         return organizer
     except TicketAppError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
