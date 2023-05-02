@@ -74,10 +74,11 @@ async def get_complaint(id: str):
     response_model=List[ComplaintSchema],
     tags=["Complaints"],
 )
-async def get_complaint_by_organizer(id: str):
+async def get_complaint_by_organizer(id: str, params: FilterComplaint = Depends()):
     try:
+        filter = FilterComplaintsParser().parse(params)
         repository = PersistentComplaintRepository()
-        complaints = GetComplaintsByOrganizerCommand(repository, id).execute()
+        complaints = GetComplaintsByOrganizerCommand(repository, id, filter).execute()
     except TicketAppError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
@@ -95,10 +96,11 @@ async def get_complaint_by_organizer(id: str):
     response_model=List[ComplaintSchema],
     tags=["Complaints"],
 )
-async def get_complaint_by_event(id: str):
+async def get_complaint_by_event(id: str, params: FilterComplaint = Depends()):
     try:
+        filter = FilterComplaintsParser().parse(params)
         repository = PersistentComplaintRepository()
-        complaints = GetComplaintsByEventCommand(repository, id).execute()
+        complaints = GetComplaintsByEventCommand(repository, id, filter).execute()
     except TicketAppError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
@@ -138,10 +140,11 @@ async def get_complaint_ranking_by_organizer(params: FilterComplaint = Depends()
     response_model=List[ComplaintEventRankingSchema],
     tags=["Complaints"],
 )
-async def get_complaint_ranking_by_event():
+async def get_complaint_ranking_by_event(params: FilterComplaint = Depends()):
     try:
+        filter = FilterComplaintsParser().parse(params)
         repository = PersistentComplaintRepository()
-        ranking = GetComplaintsRankingByEventCommand(repository).execute()
+        ranking = GetComplaintsRankingByEventCommand(repository, filter).execute()
     except TicketAppError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:

@@ -28,11 +28,13 @@ class ComplaintRepository(ABC):
         pass
 
     @abstractmethod
-    def get_complaints_by_organizer(self, organizer_id: str) -> list[Complaint]:
+    def get_complaints_by_organizer(
+        self, organizer_id: str, filter: Filter
+    ) -> list[Complaint]:
         pass
 
     @abstractmethod
-    def get_complaints_by_event(self, event_id: str) -> list[Complaint]:
+    def get_complaints_by_event(self, event_id: str, filter: Filter) -> list[Complaint]:
         pass
 
     @abstractmethod
@@ -46,7 +48,9 @@ class ComplaintRepository(ABC):
         pass
 
     @abstractmethod
-    def get_complaints_ranking_by_event(self) -> list[ComplaintEventRanking]:
+    def get_complaints_ranking_by_event(
+        self, filter: Filter
+    ) -> list[ComplaintEventRanking]:
         pass
 
 
@@ -60,12 +64,18 @@ class PersistentComplaintRepository(ComplaintRepository):
         self.complaints.insert_one(data)
         return complaint
 
-    def get_complaints_by_organizer(self, organizer_id: str) -> list[Complaint]:
-        complaints = self.complaints.find({'organizer_id': organizer_id})
+    def get_complaints_by_organizer(
+        self, organizer_id: str, filter: Filter
+    ) -> list[Complaint]:
+        pipeline = self.__get_pipeline(filter)
+        pipeline.append({'$match': {'organizer_id': organizer_id}})
+        complaints = self.complaints.aggregate(pipeline)
         return [self.__deserialize_complaint(complaint) for complaint in complaints]
 
-    def get_complaints_by_event(self, event_id: str) -> list[Complaint]:
-        complaints = self.complaints.find({'event_id': event_id})
+    def get_complaints_by_event(self, event_id: str, filter: Filter) -> list[Complaint]:
+        pipeline = self.__get_pipeline(filter)
+        pipeline.append({'$match': {'event_id': event_id}})
+        complaints = self.complaints.aggregate(pipeline)
         return [self.__deserialize_complaint(complaint) for complaint in complaints]
 
     def get_complaint(self, complaint_id: str) -> Complaint:
@@ -77,11 +87,7 @@ class PersistentComplaintRepository(ComplaintRepository):
     def get_complaints_ranking_by_organizer(
         self, filter: Filter
     ) -> list[ComplaintOrganizerRanking]:
-        pipeline = []
-        if filter.start:
-            pipeline.append({'$match': {'date': {'$gte': filter.start.isoformat()}}})
-        if filter.end:
-            pipeline.append({'$match': {'date': {'$lte': filter.end.isoformat()}}})
+        pipeline = self.__get_pipeline(filter)
         pipeline.append({'$group': {'_id': '$organizer_id', 'count': {'$sum': 1}}})
         pipeline.append({'$sort': SON([("count", -1), ("_id", -1)])})
 
@@ -91,16 +97,24 @@ class PersistentComplaintRepository(ComplaintRepository):
             for organizer in ranking
         ]
 
-    def get_complaints_ranking_by_event(self) -> list[ComplaintEventRanking]:
-        ranking = self.complaints.aggregate(
-            [
-                {'$group': {'_id': '$event_id', 'count': {'$sum': 1}}},
-                {'$sort': SON([("count", -1), ("_id", -1)])},
-            ]
-        )
+    def get_complaints_ranking_by_event(
+        self, filter: Filter
+    ) -> list[ComplaintEventRanking]:
+        pipeline = self.__get_pipeline(filter)
+        pipeline.append({'$group': {'_id': '$event_id', 'count': {'$sum': 1}}})
+        pipeline.append({'$sort': SON([("count", -1), ("_id", -1)])})
+        ranking = self.complaints.aggregate(pipeline)
         return [
             ComplaintEventRanking(event['_id'], event['count']) for event in ranking
         ]
+
+    def __get_pipeline(self, filter: Filter):
+        pipeline = []
+        if filter.start:
+            pipeline.append({'$match': {'date': {'$gte': filter.start.isoformat()}}})
+        if filter.end:
+            pipeline.append({'$match': {'date': {'$lte': filter.end.isoformat()}}})
+        return pipeline
 
     def __serialize_complaint(self, complaint: Complaint) -> dict:
         serialized = {

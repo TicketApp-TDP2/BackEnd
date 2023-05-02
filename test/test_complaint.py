@@ -780,3 +780,411 @@ def test_complaint_ranking_by_organizer_two_with_date_filter_end(monkeypatch):
     data = response.json()
     assert len(data) == 1
     assert data[0] == {'organizer_id': organizer['id'], 'complaints': 1}
+
+
+def test_complaint_ranking_by_organizer_two_organizers_with_date_filter(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 1, "hour": 15})
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    organizer2 = create_organizer({'email': 'email2@mail.com', 'id': '1232'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
+    event = create_event({'organizer': organizer['id']})
+    event2 = create_event({'organizer': organizer2['id']})
+
+    complaint_body = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+    }
+
+    client.post(URI, json=complaint_body)
+
+    complaint_body2 = {
+        "event_id": event2['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+    }
+
+    client.post(URI, json=complaint_body2)
+    mock_date(monkeypatch, {"year": 2023, "month": 4, "day": 1, "hour": 15})
+    client.post(URI, json=complaint_body2)
+
+    response = client.get(URI + "/ranking/organizer?start=2023-01-01&end=2023-03-01")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    assert data[0] == {'organizer_id': organizer2['id'], 'complaints': 1} or data[
+        0
+    ] == {'organizer_id': organizer['id'], 'complaints': 1}
+    assert data[1] == {'organizer_id': organizer['id'], 'complaints': 1} or data[1] == {
+        'organizer_id': organizer2['id'],
+        'complaints': 1,
+    }
+
+
+def test_complaint_ranking_by_organizer_two_organizers_with_date_filter_one(
+    monkeypatch,
+):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 1, "hour": 15})
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    organizer2 = create_organizer({'email': 'email2@mail.com', 'id': '1232'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
+    event = create_event({'organizer': organizer['id']})
+    event2 = create_event({'organizer': organizer2['id']})
+
+    complaint_body = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+    }
+
+    client.post(URI, json=complaint_body)
+    mock_date(monkeypatch, {"year": 2023, "month": 4, "day": 1, "hour": 15})
+
+    complaint_body2 = {
+        "event_id": event2['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+    }
+
+    client.post(URI, json=complaint_body2)
+    client.post(URI, json=complaint_body2)
+
+    response = client.get(URI + "/ranking/organizer?start=2023-03-01&end=2023-04-01")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0] == {'organizer_id': organizer2['id'], 'complaints': 2}
+
+
+def test_complaint_ranking_by_event_two_with_date_filter(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 1, "hour": 15})
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
+    event = create_event({'organizer': organizer['id']})
+
+    complaint_body = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+    }
+
+    client.post(URI, json=complaint_body)
+    mock_date(monkeypatch, {"year": 2023, "month": 4, "day": 1, "hour": 15})
+    client.post(URI, json=complaint_body)
+
+    response = client.get(URI + "/ranking/event?start=2023-03-01&end=2023-04-01")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0] == {'event_id': event['id'], 'complaints': 1}
+
+
+def test_complaint_ranking_by_event_two_with_date_filter_start(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 1, "hour": 15})
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
+    event = create_event({'organizer': organizer['id']})
+
+    complaint_body = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+    }
+
+    client.post(URI, json=complaint_body)
+    mock_date(monkeypatch, {"year": 2023, "month": 4, "day": 1, "hour": 15})
+    client.post(URI, json=complaint_body)
+
+    response = client.get(URI + "/ranking/event?start=2023-01-01&end=2023-03-01")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0] == {'event_id': event['id'], 'complaints': 1}
+
+
+def test_complaint_ranking_by_event_two_events_with_date_filter(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 1, "hour": 15})
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
+    event = create_event({'organizer': organizer['id']})
+    event2 = create_event({'organizer': organizer['id']})
+
+    complaint_body = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+    }
+
+    client.post(URI, json=complaint_body)
+
+    complaint_body2 = {
+        "event_id": event2['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+    }
+
+    client.post(URI, json=complaint_body2)
+    mock_date(monkeypatch, {"year": 2023, "month": 4, "day": 1, "hour": 15})
+    client.post(URI, json=complaint_body2)
+
+    response = client.get(URI + "/ranking/event?start=2023-01-01&end=2023-03-01")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    assert data[0] == {'event_id': event2['id'], 'complaints': 1} or data[0] == {
+        'event_id': event['id'],
+        'complaints': 1,
+    }
+    assert data[1] == {'event_id': event['id'], 'complaints': 1} or data[1] == {
+        'event_id': event2['id'],
+        'complaints': 1,
+    }
+
+
+def test_complaint_ranking_by_event_two_events_with_date_filter_one(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 1, "hour": 15})
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
+    event = create_event({'organizer': organizer['id']})
+    event2 = create_event({'organizer': organizer['id']})
+
+    complaint_body = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+    }
+
+    client.post(URI, json=complaint_body)
+
+    complaint_body2 = {
+        "event_id": event2['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+    }
+
+    mock_date(monkeypatch, {"year": 2023, "month": 4, "day": 1, "hour": 15})
+    client.post(URI, json=complaint_body2)
+    client.post(URI, json=complaint_body2)
+
+    response = client.get(URI + "/ranking/event?start=2023-03-01&end=2023-04-01")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0] == {'event_id': event2['id'], 'complaints': 2}
+
+
+def test_complaint_get_by_event_two_with_date_filter(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 1, "hour": 15})
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
+    event = create_event({'organizer': organizer['id']})
+
+    complaint_body1 = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description1",
+    }
+
+    complaint_body2 = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description2",
+    }
+
+    client.post(URI, json=complaint_body1)
+    mock_date(monkeypatch, {"year": 2023, "month": 4, "day": 1, "hour": 15})
+    client.post(URI, json=complaint_body2)
+
+    response = client.get(URI + f"/event/{event['id']}?start=2023-03-01&end=2023-04-01")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    complaint_body2["id"] = data[0]["id"]
+    complaint_body2["organizer_id"] = organizer['id']
+    complaint_body2["date"] = data[0]["date"]
+    assert data[0] == complaint_body2
+
+
+def test_complaint_get_by_event_two_with_date_filter_start(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 1, "hour": 15})
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
+    event = create_event({'organizer': organizer['id']})
+
+    complaint_body1 = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description1",
+    }
+
+    complaint_body2 = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description2",
+    }
+
+    client.post(URI, json=complaint_body1)
+    mock_date(monkeypatch, {"year": 2023, "month": 4, "day": 1, "hour": 15})
+    client.post(URI, json=complaint_body2)
+
+    response = client.get(URI + f"/event/{event['id']}?start=2023-01-01&end=2023-02-01")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    complaint_body1["id"] = data[0]["id"]
+    complaint_body1["organizer_id"] = organizer['id']
+    complaint_body1["date"] = data[0]["date"]
+    assert data[0] == complaint_body1
+
+
+def test_get_complaint_by_event_two_events_with_date_filter(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 1, "hour": 15})
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    organizer2 = create_organizer({'email': 'email2@mail.com', 'id': '1232'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
+    event = create_event({'organizer': organizer['id']})
+    event2 = create_event({'organizer': organizer2['id']})
+
+    complaint_body1 = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description1",
+    }
+
+    complaint_body2 = {
+        "event_id": event2['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description2",
+    }
+
+    client.post(URI, json=complaint_body1)
+    mock_date(monkeypatch, {"year": 2023, "month": 4, "day": 1, "hour": 15})
+    client.post(URI, json=complaint_body2)
+
+    response = client.get(URI + f"/event/{event['id']}?start=2023-03-01&end=2023-04-01")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 0
+
+
+def test_complaint_get_by_organizer_two_with_date_filter(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 1, "hour": 15})
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
+    event = create_event({'organizer': organizer['id']})
+    event2 = create_event({'organizer': organizer['id']})
+
+    complaint_body1 = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description1",
+    }
+
+    complaint_body2 = {
+        "event_id": event2['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description2",
+    }
+
+    client.post(URI, json=complaint_body1)
+    mock_date(monkeypatch, {"year": 2023, "month": 4, "day": 1, "hour": 15})
+    client.post(URI, json=complaint_body2)
+
+    response = client.get(
+        URI + f"/organizer/{organizer['id']}?start=2023-03-01&end=2023-04-01"
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    complaint_body2["id"] = data[0]["id"]
+    complaint_body2["organizer_id"] = organizer['id']
+    complaint_body2["date"] = data[0]["date"]
+    assert data[0] == complaint_body2
+
+
+def test_complaint_get_by_organizer_two_with_date_filter_end(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 1, "hour": 15})
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
+    event = create_event({'organizer': organizer['id']})
+    event2 = create_event({'organizer': organizer['id']})
+
+    complaint_body1 = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description1",
+    }
+
+    complaint_body2 = {
+        "event_id": event2['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description2",
+    }
+
+    client.post(URI, json=complaint_body1)
+    mock_date(monkeypatch, {"year": 2023, "month": 4, "day": 1, "hour": 15})
+    client.post(URI, json=complaint_body2)
+
+    response = client.get(
+        URI + f"/organizer/{organizer['id']}?start=2023-01-01&end=2023-03-01"
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    complaint_body1["id"] = data[0]["id"]
+    complaint_body1["organizer_id"] = organizer['id']
+    complaint_body1["date"] = data[0]["date"]
+    assert data[0] == complaint_body1
+
+
+def test_get_complaint_by_organizer_two_organizers_with_date_filter(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 1, "hour": 15})
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    organizer2 = create_organizer({'email': 'email2@mail.com', 'id': '1234'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
+    event = create_event({'organizer': organizer['id']})
+    event2 = create_event({'organizer': organizer2['id']})
+
+    complaint_body1 = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+    }
+
+    complaint_body2 = {
+        "event_id": event2['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+    }
+
+    client.post(URI, json=complaint_body1)
+    client.post(URI, json=complaint_body2)
+
+    response = client.get(
+        URI + f"/organizer/{organizer['id']}?start=2023-03-01&end=2023-04-01"
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 0

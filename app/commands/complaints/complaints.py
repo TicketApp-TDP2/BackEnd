@@ -41,24 +41,35 @@ class CreateComplaintCommand:
 
 
 class GetComplaintsByOrganizerCommand:
-    def __init__(self, complaint_repository: ComplaintRepository, organizer_id: str):
+    def __init__(
+        self,
+        complaint_repository: ComplaintRepository,
+        organizer_id: str,
+        filter: Filter,
+    ):
         self.complaint_repository = complaint_repository
         self.organizer_id = organizer_id
+        self.filter = filter
 
     def execute(self) -> List[ComplaintSchema]:
         complaints = self.complaint_repository.get_complaints_by_organizer(
-            self.organizer_id
+            self.organizer_id, self.filter
         )
         return [ComplaintSchema.from_model(complaint) for complaint in complaints]
 
 
 class GetComplaintsByEventCommand:
-    def __init__(self, complaint_repository: ComplaintRepository, event_id: str):
+    def __init__(
+        self, complaint_repository: ComplaintRepository, event_id: str, filter: Filter
+    ):
         self.complaint_repository = complaint_repository
         self.event_id = event_id
+        self.filter = filter
 
     def execute(self) -> List[ComplaintSchema]:
-        complaints = self.complaint_repository.get_complaints_by_event(self.event_id)
+        complaints = self.complaint_repository.get_complaints_by_event(
+            self.event_id, self.filter
+        )
         return [ComplaintSchema.from_model(complaint) for complaint in complaints]
 
 
@@ -85,9 +96,10 @@ class GetComplaintsRankingByOrganizerCommand:
 
 
 class GetComplaintsRankingByEventCommand:
-    def __init__(self, complaint_repository: ComplaintRepository):
+    def __init__(self, complaint_repository: ComplaintRepository, filter: Filter):
         self.complaint_repository = complaint_repository
+        self.filter = filter
 
     def execute(self) -> List[ComplaintEventRankingSchema]:
-        ranking = self.complaint_repository.get_complaints_ranking_by_event()
+        ranking = self.complaint_repository.get_complaints_ranking_by_event(self.filter)
         return [ComplaintEventRankingSchema.from_model(rank) for rank in ranking]
