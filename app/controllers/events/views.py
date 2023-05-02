@@ -18,6 +18,7 @@ from app.commands.events import (
     CancelEventCommand,
     UpdateEventCommand,
     SuspendEventCommand,
+    DeSuspendEventCommand,
 )
 from app.utils.error import TicketAppError
 
@@ -159,6 +160,26 @@ async def suspend_event(id: str):
     try:
         repository = PersistentEventRepository()
         event = SuspendEventCommand(repository, id).execute()
+        return event
+    except TicketAppError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Error"
+        )
+
+
+@router.put(
+    '/events/{id}/desuspend',
+    status_code=status.HTTP_200_OK,
+    response_model=EventSchema,
+    tags=["Events"],
+)
+async def suspend_event(id: str):
+    try:
+        repository = PersistentEventRepository()
+        event = DeSuspendEventCommand(repository, id).execute()
         return event
     except TicketAppError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
