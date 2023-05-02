@@ -65,3 +65,9 @@ class VacantsCannotBeUpdatedError(BusinessError):
     def __init__(self):
         msg = "vacants_cannot_be_less_than_bookings"
         super().__init__(msg)
+
+
+class EventCannotBeSuspendedError(BusinessError):
+    def __init__(self):
+        msg = "event_cannot_be_suspended"
+        super().__init__(msg)

@@ -205,8 +205,9 @@ def test_get_event_not_exists():
     assert data['detail'] == "event_not_found"
 
 
-def test_get_event_exists():
-    body = create_event()
+def test_get_event_exists(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+    body = create_event({"date": "2024-04-02"})
     response = client.post(URI, json=body)
     id = response.json()['id']
     expected_response = body.copy()
@@ -1003,3 +1004,50 @@ def test_event_update_vacants(monkeypatch):
         },
     )
     assert data == new_body
+
+
+def test_suspend_event():
+    event = create_event()
+    client.put(f"{URI}/{event['id']}/publish")
+    response = client.put(f"{URI}/{event['id']}/suspend")
+    data = response.json()
+    assert response.status_code == 200
+    assert data['state'] == 'Suspendido'
+
+
+def test_suspend_event_borrador():
+    event = create_event()
+    response = client.put(f"{URI}/{event['id']}/suspend")
+    assert response.status_code == 400
+    assert response.json()['detail'] == 'event_cannot_be_suspended'
+
+
+def test_suspend_event_cancelado():
+    event = create_event()
+    client.put(f"{URI}/{event['id']}/cancel")
+    response = client.put(f"{URI}/{event['id']}/suspend")
+    assert response.status_code == 400
+    assert response.json()['detail'] == 'event_cannot_be_suspended'
+
+
+def test_get_event_finished(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+    event = create_event({"date": "2023-02-01"})
+    response = client.get(f"{URI}/{event['id']}")
+    assert response.status_code == 200
+    assert response.json()['state'] == 'Finalizado'
+
+
+def test_suspend_event_finalizado(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+    event = create_event()
+    client.get(f"{URI}/{event['id']}")
+    response = client.put(f"{URI}/{event['id']}/suspend")
+    assert response.status_code == 400
+    assert response.json()['detail'] == 'event_cannot_be_suspended'
+
+
+def test_suspend_non_existing_event():
+    response = client.put(f"{URI}/123/suspend")
+    assert response.status_code == 400
+    assert response.json()['detail'] == 'event_not_found'

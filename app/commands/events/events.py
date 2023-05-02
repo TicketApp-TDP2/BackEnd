@@ -14,6 +14,7 @@ from .errors import (
     TooManyFaqsError,
     EventCannotBeUpdatedError,
     VacantsCannotBeUpdatedError,
+    EventCannotBeSuspendedError,
 )
 from app.repositories.event import (
     EventRepository,
@@ -115,8 +116,16 @@ class GetEventCommand:
         if not exists:
             raise EventNotFoundError
         event = self.event_repository.get_event(self.id)
+        event_with_finished = self.check_finished(event)
 
-        return EventSchema.from_model(event)
+        return EventSchema.from_model(event_with_finished)
+
+    def check_finished(self, event: Event) -> Event:
+        now = getNow().date()
+        time = getNow().time()
+        if event.date < now or (event.date == now and event.end_time < time):
+            event = self.event_repository.update_state_event(event.id, State.Finalizado)
+        return event
 
 
 class SearchEventsCommand:
@@ -255,4 +264,21 @@ class UpdateEventCommand:
         )
         event = self.event_repository.update_event(event)
 
+        return EventSchema.from_model(event)
+
+
+class SuspendEventCommand:
+    def __init__(self, event_repository: EventRepository, _id: str):
+        self.event_repository = event_repository
+        self.id = _id
+
+    def execute(self) -> EventSchema:
+        exists = self.event_repository.event_exists(self.id)
+        if not exists:
+            raise EventNotFoundError
+        event = self.event_repository.get_event(self.id)
+        if event.state == State.Publicado:
+            event = self.event_repository.update_state_event(self.id, State.Suspendido)
+        else:
+            raise EventCannotBeSuspendedError
         return EventSchema.from_model(event)

@@ -55,6 +55,7 @@ class State(Enum):
     Publicado = "Publicado"
     Finalizado = "Finalizado"
     Cancelado = "Cancelado"
+    Suspendido = "Suspendido"
 
 
 class Event:
