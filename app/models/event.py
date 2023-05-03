@@ -78,6 +78,7 @@ class Event:
         id: str,
         state: State,
         verified_vacants: int,
+        collaborators: list[str],
     ):
         self.name = name
         self.description = description
@@ -96,6 +97,7 @@ class Event:
         self.id = id
         self.state = state
         self.verified_vacants = verified_vacants
+        self.collaborators = collaborators
 
     @classmethod
     def new(
@@ -133,4 +135,5 @@ class Event:
             FAQ=FAQ,
             state=State.Borrador,
             verified_vacants=0,
+            collaborators=[],
         )

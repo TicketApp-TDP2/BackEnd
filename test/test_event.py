@@ -236,6 +236,7 @@ def test_get_event_exists(monkeypatch):
             'vacants_left': expected_response['vacants'],
             'state': 'Borrador',
             'verified_vacants': 0,
+            'collaborators': [],
         },
     )
 
@@ -820,6 +821,7 @@ def test_event_update_borrador(monkeypatch):
             "vacants_left": 5,
             "verified_vacants": event["verified_vacants"],
             "organizer": event["organizer"],
+            'collaborators': [],
         },
     )
     assert data == new_body
@@ -846,6 +848,7 @@ def test_event_update_publicado(monkeypatch):
             "vacants_left": 5,
             "verified_vacants": event["verified_vacants"],
             "organizer": event["organizer"],
+            'collaborators': [],
         },
     )
     assert data == new_body
@@ -1019,6 +1022,7 @@ def test_event_update_vacants(monkeypatch):
             "vacants_left": 4,
             "verified_vacants": event["verified_vacants"],
             "organizer": event["organizer"],
+            'collaborators': [],
         },
     )
     assert data == new_body

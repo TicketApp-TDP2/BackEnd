@@ -262,6 +262,7 @@ class UpdateEventCommand:
             FAQ=faq if self.update.FAQ else event.FAQ,
             state=event.state,
             verified_vacants=event.verified_vacants,
+            collaborators=event.collaborators,
         )
         event = self.event_repository.update_event(event)
 

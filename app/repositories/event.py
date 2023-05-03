@@ -223,6 +223,7 @@ class PersistentEventRepository(EventRepository):
             '_id': event.id,
             'state': event.state.value,
             'verified_vacants': event.verified_vacants,
+            'collaborators': event.collaborators,
         }
 
         return serialized
@@ -276,4 +277,5 @@ class PersistentEventRepository(EventRepository):
             FAQ=deserialized_faq,
             state=State(data['state']),
             verified_vacants=data['verified_vacants'],
+            collaborators=data['collaborators'],
         )
