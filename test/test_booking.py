@@ -497,3 +497,73 @@ def test_event_has_1_verified_after_booking_verified(monkeypatch):
     response = client.get(f"{EVENTS_URI}/{event['id']}")
     assert response.status_code == 200
     assert response.json()['verified_vacants'] == 1
+
+
+def test_get_booking_by_event_non_existent():
+    response = client.get(f"{URI}/event/123")
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_get_booking_by_event_zero(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    event = create_event({'owner': organizer['id']})
+
+    response = client.get(f"{URI}/event/{event['id']}")
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_get_booking_by_event_one(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
+    event = create_event({'owner': organizer['id']})
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
+
+    booking_body = {
+        "event_id": event['id'],
+        "reserver_id": reserver['id'],
+    }
+
+    client.post(URI, json=booking_body)
+    response = client.get(f"{URI}/event/{event['id']}")
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    response_data = response.json()[0]
+    assert response_data["event_id"] == event['id']
+
+
+def test_get_booking_by_event_two(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 1, 'hour': 2})
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
+    reserver2 = create_user({'email': 'reserver2@mail.com', 'id': '2342'})
+    event = create_event({'owner': organizer['id']})
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
+
+    booking_body = {
+        "event_id": event['id'],
+        "reserver_id": reserver['id'],
+    }
+
+    client.post(URI, json=booking_body)
+
+    booking_body2 = {
+        "event_id": event['id'],
+        "reserver_id": reserver2['id'],
+    }
+
+    client.post(URI, json=booking_body2)
+    response = client.get(f"{URI}/event/{event['id']}")
+
+    assert response.status_code == 200
+    assert len(response.json()) == 2
+    response_data = response.json()[0]
+    assert response_data["event_id"] == event['id']
+    assert response_data["reserver_id"] == reserver['id']
+    response_data = response.json()[1]
+    assert response_data["event_id"] == event['id']
+    assert response_data["reserver_id"] == reserver2['id']

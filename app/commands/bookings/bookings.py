@@ -98,3 +98,13 @@ class VerifyBookingCommand:
         )
 
         return BookingSchema.from_model(booking)
+
+
+class GetBookingsByEventCommand:
+    def __init__(self, booking_repository: BookingRepository, event_id: str):
+        self.booking_repository = booking_repository
+        self.event_id = event_id
+
+    def execute(self) -> List[BookingSchema]:
+        bookings = self.booking_repository.get_bookings_by_event(self.event_id)
+        return [BookingSchema.from_model(booking) for booking in bookings]
