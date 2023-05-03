@@ -77,3 +77,9 @@ class EventCannotBeUnSuspendedError(BusinessError):
     def __init__(self):
         msg = "event_cannot_be_unsuspended"
         super().__init__(msg)
+
+
+class CollaboratorNotFoundError(BusinessError):
+    def __init__(self):
+        msg = "collaborator_not_found"
+        super().__init__(msg)

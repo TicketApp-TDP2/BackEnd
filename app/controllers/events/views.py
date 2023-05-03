@@ -1,5 +1,6 @@
 from fastapi.exceptions import HTTPException
 from app.repositories.event import PersistentEventRepository
+from app.repositories.organizers import PersistentOrganizerRepository
 from app.commands.events.events import SearchEventsCommand
 from app.parsers.search_parser import SearchEventsParser
 from typing import List
@@ -19,6 +20,7 @@ from app.commands.events import (
     UpdateEventCommand,
     SuspendEventCommand,
     UnSuspendEventCommand,
+    AddCollaboratorEventCommand,
 )
 from app.utils.error import TicketAppError
 
@@ -180,6 +182,29 @@ async def unsuspend_event(id: str):
     try:
         repository = PersistentEventRepository()
         event = UnSuspendEventCommand(repository, id).execute()
+        return event
+    except TicketAppError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Error"
+        )
+
+
+@router.put(
+    '/events/{id}/add_collaborator/{collaborator_email}',
+    status_code=status.HTTP_200_OK,
+    response_model=EventSchema,
+    tags=["Events"],
+)
+async def add_collaborator_event(id: str, collaborator_email: str):
+    try:
+        repository = PersistentEventRepository()
+        organizer_repository = PersistentOrganizerRepository()
+        event = AddCollaboratorEventCommand(
+            repository, organizer_repository, id, collaborator_email
+        ).execute()
         return event
     except TicketAppError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

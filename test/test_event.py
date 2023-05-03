@@ -1259,3 +1259,71 @@ def test_unsuspend_organizer_event_terminado(monkeypatch):
     data = response.json()
     assert response.status_code == 200
     assert data['state'] == 'Finalizado'
+
+
+def test_add_collaborator():
+    organizer = create_organizer_body()
+    organizer = client.post(ORGANIZER_URI, json=organizer).json()
+    collaborator = create_organizer_body({"id": "1234", "email": "collab@gmail.com"})
+    collaborator = client.post(ORGANIZER_URI, json=collaborator).json()
+    event = create_event({"organizer": organizer['id']})
+    response = client.put(
+        f"{URI}/{event['id']}/add_collaborator/{collaborator['email']}"
+    )
+    data = response.json()
+    assert response.status_code == 200
+    assert len(data['collaborators']) == 1
+    assert data['collaborators'][0] == collaborator['id']
+
+
+def test_add_collaborator_two():
+    organizer = create_organizer_body()
+    organizer = client.post(ORGANIZER_URI, json=organizer).json()
+    collaborator = create_organizer_body({"id": "1234", "email": "collab@gmail.com"})
+    collaborator = client.post(ORGANIZER_URI, json=collaborator).json()
+    collaborator2 = create_organizer_body({"id": "1254", "email": "collab2@gmail.com"})
+    collaborator2 = client.post(ORGANIZER_URI, json=collaborator2).json()
+
+    event = create_event({"organizer": organizer['id']})
+    client.put(f"{URI}/{event['id']}/add_collaborator/{collaborator['email']}")
+    client.put(f"{URI}/{event['id']}/add_collaborator/{collaborator2['email']}")
+    response = client.get(f"{URI}/{event['id']}")
+    data = response.json()
+    assert response.status_code == 200
+    assert len(data['collaborators']) == 2
+    assert data['collaborators'][0] == collaborator['id']
+    assert data['collaborators'][1] == collaborator2['id']
+
+
+def test_add_collaborator_twice():
+    organizer = create_organizer_body()
+    organizer = client.post(ORGANIZER_URI, json=organizer).json()
+    collaborator = create_organizer_body({"id": "1234", "email": "collab@gmail.com"})
+    collaborator = client.post(ORGANIZER_URI, json=collaborator).json()
+
+    event = create_event({"organizer": organizer['id']})
+    client.put(f"{URI}/{event['id']}/add_collaborator/{collaborator['email']}")
+    response = client.put(
+        f"{URI}/{event['id']}/add_collaborator/{collaborator['email']}"
+    )
+    data = response.json()
+    assert response.status_code == 200
+    assert len(data['collaborators']) == 1
+    assert data['collaborators'][0] == collaborator['id']
+
+
+def test_add_collaborator_not_found():
+    organizer = create_organizer_body()
+    organizer = client.post(ORGANIZER_URI, json=organizer).json()
+    event = create_event({"organizer": organizer['id']})
+    response = client.put(f"{URI}/{event['id']}/add_collaborator/notfound@gmail.com")
+    assert response.status_code == 400
+    assert response.json()['detail'] == 'collaborator_not_found'
+
+
+def test_add_collaborator_non_existing_event():
+    collaborator = create_organizer_body()
+    collaborator = client.post(ORGANIZER_URI, json=collaborator).json()
+    response = client.put(f"{URI}/999999/add_collaborator/{collaborator['email']}")
+    assert response.status_code == 400
+    assert response.json()['detail'] == 'event_not_found'

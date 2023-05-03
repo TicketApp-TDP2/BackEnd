@@ -16,11 +16,13 @@ from .errors import (
     VacantsCannotBeUpdatedError,
     EventCannotBeSuspendedError,
     EventCannotBeUnSuspendedError,
+    CollaboratorNotFoundError,
 )
 from app.repositories.event import (
     EventRepository,
     Search,
 )
+from app.repositories.organizers import OrganizerRepository
 from app.config.logger import setup_logger
 from datetime import time
 from app.utils.now import getNow
@@ -300,4 +302,38 @@ class UnSuspendEventCommand:
             event = self.event_repository.update_state_event(self.id, State.Publicado)
         else:
             raise EventCannotBeUnSuspendedError
+        return EventSchema.from_model(event)
+
+
+class AddCollaboratorEventCommand:
+    def __init__(
+        self,
+        event_repository: EventRepository,
+        organizer_repository: OrganizerRepository,
+        _id: str,
+        collaborator_email: str,
+    ):
+        self.event_repository = event_repository
+        self.organizer_repository = organizer_repository
+        self.id = _id
+        self.collaborator_email = collaborator_email
+
+    def execute(self) -> EventSchema:
+        exists = self.event_repository.event_exists(self.id)
+        if not exists:
+            raise EventNotFoundError
+        collaborator_exists = self.organizer_repository.organizer_exists_by_email(
+            self.collaborator_email
+        )
+        if not collaborator_exists:
+            raise CollaboratorNotFoundError
+        collaborator = self.organizer_repository.get_organizer_by_email(
+            self.collaborator_email
+        )
+        event = self.event_repository.get_event(self.id)
+        collaborators = event.collaborators
+        if collaborator.id not in collaborators:
+            collaborators.append(collaborator.id)
+        event.collaborators = collaborators
+        event = self.event_repository.update_event(event)
         return EventSchema.from_model(event)
