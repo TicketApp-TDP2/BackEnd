@@ -135,9 +135,14 @@ class PersistentEventRepository(EventRepository):
 
     def __serialize_search(self, search: Search) -> dict:
         srch = {
-            'organizer': search.organizer,
             'type': search.type and search.type.value,
         }
+
+        if search.organizer:
+            srch['$or'] = [
+                {'organizer': search.organizer},
+                {'collaborators': {'$elemMatch': {'id': search.organizer}}},
+            ]
 
         if search.name:
             srch['name'] = {'$regex': search.name, '$options': 'i'}

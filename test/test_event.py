@@ -1394,9 +1394,111 @@ def test_remove_collaborator_two():
     assert data['collaborators'][0]["id"] == collaborator2['id']
     assert data['collaborators'][0]["email"] == collaborator2['email']
 
+
 def test_remove_collaborator_non_existing_event():
     collaborator = create_organizer_body()
     collaborator = client.post(ORGANIZER_URI, json=collaborator).json()
     response = client.put(f"{URI}/999999/remove_collaborator/{collaborator['email']}")
     assert response.status_code == 400
     assert response.json()['detail'] == 'event_not_found'
+
+
+def test_search_event_collaborator():
+    organizer = create_organizer_body({"id": "1234", "email": "collab@email.com"})
+    organizer = client.post(ORGANIZER_URI, json=organizer).json()
+    event1 = create_event({"name": "event 1", "organizer": "omar"})
+    event2 = create_event({"name": "event 2", "organizer": "juan"})
+    event3 = create_event({"name": "event 3", "organizer": "omar"})
+    event4 = create_event({"name": "event 4", "organizer": "gabriel"})
+
+    client.put(f"{URI}/{event2['id']}/add_collaborator/{organizer['email']}")
+    client.put(f"{URI}/{event3['id']}/add_collaborator/{organizer['email']}")
+
+    response = client.get(f"{URI}?organizer=1234")
+    data = response.json()
+
+    data_names = map(lambda e: e['name'], data)
+
+    assert len(data) == 2
+    assert all(map(lambda e: e['name'] in data_names, [event2, event3]))
+    assert not any(map(lambda e: e['name'] in data_names, [event1, event4]))
+
+
+def test_search_event_collaborator_empty():
+    organizer = create_organizer_body({"id": "1234", "email": "collab@email.com"})
+    organizer = client.post(ORGANIZER_URI, json=organizer).json()
+    event1 = create_event({"name": "event 1", "organizer": "omar"})
+    event2 = create_event({"name": "event 2", "organizer": "juan"})
+    event3 = create_event({"name": "event 3", "organizer": "omar"})
+    event4 = create_event({"name": "event 4", "organizer": "gabriel"})
+
+    response = client.get(f"{URI}?organizer=1234")
+    data = response.json()
+
+    assert len(data) == 0
+
+
+def test_search_event_collaborator_two():
+    organizer = create_organizer_body({"id": "1234", "email": "collab@email.com"})
+    organizer = client.post(ORGANIZER_URI, json=organizer).json()
+    organizer2 = create_organizer_body({"id": "12342", "email": "collab2@email.com"})
+    organizer2 = client.post(ORGANIZER_URI, json=organizer2).json()
+
+    event1 = create_event({"name": "event 1", "organizer": "omar"})
+    event2 = create_event({"name": "event 2", "organizer": "juan"})
+    event3 = create_event({"name": "event 3", "organizer": "omar"})
+    event4 = create_event({"name": "event 4", "organizer": "gabriel"})
+
+    client.put(f"{URI}/{event2['id']}/add_collaborator/{organizer['email']}")
+    client.put(f"{URI}/{event3['id']}/add_collaborator/{organizer['email']}")
+
+    response = client.get(f"{URI}?organizer=12342")
+    data = response.json()
+
+    assert len(data) == 0
+
+
+def test_search_event_collaborator_two_has_events():
+    organizer = create_organizer_body({"id": "1234", "email": "collab@email.com"})
+    organizer = client.post(ORGANIZER_URI, json=organizer).json()
+    organizer2 = create_organizer_body({"id": "12342", "email": "collab2@email.com"})
+    organizer2 = client.post(ORGANIZER_URI, json=organizer2).json()
+
+    event1 = create_event({"name": "event 1", "organizer": "omar"})
+    event2 = create_event({"name": "event 2", "organizer": "juan"})
+    event3 = create_event({"name": "event 3", "organizer": "omar"})
+    event4 = create_event({"name": "event 4", "organizer": "gabriel"})
+
+    client.put(f"{URI}/{event2['id']}/add_collaborator/{organizer['email']}")
+    client.put(f"{URI}/{event3['id']}/add_collaborator/{organizer['email']}")
+    client.put(f"{URI}/{event4['id']}/add_collaborator/{organizer2['email']}")
+    client.put(f"{URI}/{event3['id']}/add_collaborator/{organizer2['email']}")
+
+    response = client.get(f"{URI}?organizer=1234")
+    data = response.json()
+    data_names = map(lambda e: e['name'], data)
+
+    assert len(data) == 2
+    assert all(map(lambda e: e['name'] in data_names, [event2, event3]))
+    assert not any(map(lambda e: e['name'] in data_names, [event1, event4]))
+
+
+def test_search_event_collaborator_has_events_and_is_organizer():
+    organizer = create_organizer_body({"id": "1234", "email": "collab@email.com"})
+    organizer = client.post(ORGANIZER_URI, json=organizer).json()
+
+    event1 = create_event({"name": "event 1", "organizer": organizer["id"]})
+    event2 = create_event({"name": "event 2", "organizer": "juan"})
+    event3 = create_event({"name": "event 3", "organizer": "omar"})
+    event4 = create_event({"name": "event 4", "organizer": "gabriel"})
+
+    client.put(f"{URI}/{event2['id']}/add_collaborator/{organizer['email']}")
+    client.put(f"{URI}/{event3['id']}/add_collaborator/{organizer['email']}")
+
+    response = client.get(f"{URI}?organizer=1234")
+    data = response.json()
+    data_names = map(lambda e: e['name'], data)
+
+    assert len(data) == 3
+    assert all(map(lambda e: e['name'] in data_names, [event1, event2, event3]))
+    assert not any(map(lambda e: e['name'] in data_names, [event4]))
