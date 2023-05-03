@@ -1273,7 +1273,8 @@ def test_add_collaborator():
     data = response.json()
     assert response.status_code == 200
     assert len(data['collaborators']) == 1
-    assert data['collaborators'][0] == collaborator['id']
+    assert data['collaborators'][0]["id"] == collaborator['id']
+    assert data['collaborators'][0]["email"] == collaborator['email']
 
 
 def test_add_collaborator_two():
@@ -1291,8 +1292,10 @@ def test_add_collaborator_two():
     data = response.json()
     assert response.status_code == 200
     assert len(data['collaborators']) == 2
-    assert data['collaborators'][0] == collaborator['id']
-    assert data['collaborators'][1] == collaborator2['id']
+    assert data['collaborators'][0]["id"] == collaborator['id']
+    assert data['collaborators'][0]["email"] == collaborator['email']
+    assert data['collaborators'][1]["id"] == collaborator2['id']
+    assert data['collaborators'][1]["email"] == collaborator2['email']
 
 
 def test_add_collaborator_twice():
@@ -1309,7 +1312,8 @@ def test_add_collaborator_twice():
     data = response.json()
     assert response.status_code == 200
     assert len(data['collaborators']) == 1
-    assert data['collaborators'][0] == collaborator['id']
+    assert data['collaborators'][0]["id"] == collaborator['id']
+    assert data['collaborators'][0]["email"] == collaborator['email']
 
 
 def test_add_collaborator_not_found():
@@ -1327,3 +1331,20 @@ def test_add_collaborator_non_existing_event():
     response = client.put(f"{URI}/999999/add_collaborator/{collaborator['email']}")
     assert response.status_code == 400
     assert response.json()['detail'] == 'event_not_found'
+
+
+"""
+def test_remove_collaborator():
+    organizer = create_organizer_body()
+    organizer = client.post(ORGANIZER_URI, json=organizer).json()
+    collaborator = create_organizer_body({"id": "1234", "email": "collab@gmail.com"})
+    collaborator = client.post(ORGANIZER_URI, json=collaborator).json()
+    event = create_event({"organizer": organizer['id']})
+    client.put(
+        f"{URI}/{event['id']}/add_collaborator/{collaborator['email']}"
+    )
+    response = client.put(f"{URI}/{event['id']}/remove_collaborator/{collaborator['id']}"
+    data = response.json()
+    assert response.status_code == 200
+    assert len(data['collaborators']) == 0
+"""

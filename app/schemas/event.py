@@ -28,6 +28,11 @@ class FaqSchema(BaseModel):
     answer: str = Field(..., min_length=3)
 
 
+class CollaboratorSchema(BaseModel):
+    id: str = Field(..., min_length=3)
+    email: str = Field(..., min_length=3)
+
+
 class AgendaSchema(BaseModel):
     time_init: str = Field(..., min_length=3)
     time_end: str = Field(..., min_length=3)
@@ -76,7 +81,7 @@ class EventSchema(EventSchemaBase):
     vacants_left: int = Field(..., ge=0)
     state: State
     verified_vacants: int
-    collaborators: List[str]
+    collaborators: List[CollaboratorSchema]
 
     @classmethod
     def from_model(cls, event: Event) -> EventSchema:
@@ -104,6 +109,14 @@ class EventSchema(EventSchemaBase):
             for element in event.FAQ
         ]
 
+        collaborators = [
+            CollaboratorSchema(
+                id=element.id,
+                email=element.email,
+            )
+            for element in event.collaborators
+        ]
+
         return EventSchema(
             name=event.name,
             description=event.description,
@@ -122,5 +135,5 @@ class EventSchema(EventSchemaBase):
             id=event.id,
             state=State(event.state),
             verified_vacants=event.verified_vacants,
-            collaborators=event.collaborators,
+            collaborators=collaborators,
         )

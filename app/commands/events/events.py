@@ -1,6 +1,6 @@
 import json
 from typing import List
-from app.models.event import Agenda, Event, Faq, Location, State
+from app.models.event import Agenda, Event, Faq, Location, State, Collaborator
 from app.schemas.event import EventCreateSchema, EventSchema, EventUpdateSchema
 from .errors import (
     EventAlreadyExistsError,
@@ -332,8 +332,9 @@ class AddCollaboratorEventCommand:
         )
         event = self.event_repository.get_event(self.id)
         collaborators = event.collaborators
-        if collaborator.id not in collaborators:
-            collaborators.append(collaborator.id)
+        collaborator = Collaborator(id=collaborator.id, email=collaborator.email)
+        if collaborator not in collaborators:
+            collaborators.append(collaborator)
         event.collaborators = collaborators
         event = self.event_repository.update_event(event)
         return EventSchema.from_model(event)
