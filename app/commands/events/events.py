@@ -338,3 +338,37 @@ class AddCollaboratorEventCommand:
         event.collaborators = collaborators
         event = self.event_repository.update_event(event)
         return EventSchema.from_model(event)
+
+
+class RemoveCollaboratorEventCommand:
+    def __init__(
+        self,
+        event_repository: EventRepository,
+        organizer_repository: OrganizerRepository,
+        _id: str,
+        collaborator_id: str,
+    ):
+        self.event_repository = event_repository
+        self.organizer_repository = organizer_repository
+        self.id = _id
+        self.collaborator_id = collaborator_id
+
+    def execute(self) -> EventSchema:
+        exists = self.event_repository.event_exists(self.id)
+        if not exists:
+            raise EventNotFoundError
+        event = self.event_repository.get_event(self.id)
+        collaborators = event.collaborators
+
+        collaborator_exists = self.organizer_repository.organizer_exists(
+            self.collaborator_id
+        )
+        if collaborator_exists:
+            collaborator = self.organizer_repository.get_organizer(self.collaborator_id)
+            collaborator = Collaborator(id=collaborator.id, email=collaborator.email)
+            if collaborator in collaborators:
+                collaborators.remove(collaborator)
+            event.collaborators = collaborators
+
+        event = self.event_repository.update_event(event)
+        return EventSchema.from_model(event)
