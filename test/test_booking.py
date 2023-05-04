@@ -567,3 +567,56 @@ def test_get_booking_by_event_two(monkeypatch):
     response_data = response.json()[1]
     assert response_data["event_id"] == event['id']
     assert response_data["reserver_id"] == reserver2['id']
+
+
+def test_bookings_after_4_days(monkeypatch):
+    mock_date(monkeypatch, {'year': 2021, 'month': 1, 'day': 5, 'hour': 15})
+
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
+    event1 = create_event({'owner': organizer['id'], 'date': '2021-12-31'})
+    client.put(f"{EVENTS_URI}/{event1['id']}/publish")
+    event2 = create_event(
+        {
+            'owner': organizer['id'],
+            'date': '2022-01-01',
+            'start_time': '12:00',
+            'end_time': '14:00',
+            'agenda': [
+                {
+                    'time_init': '12:00',
+                    'time_end': '14:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                }
+            ],
+        }
+    )
+    client.put(f"{EVENTS_URI}/{event2['id']}/publish")
+
+    event3 = create_event({'owner': organizer['id'], 'date': '2022-01-02'})
+    client.put(f"{EVENTS_URI}/{event3['id']}/publish")
+
+    booking_body1 = {"event_id": event1['id'], "reserver_id": reserver['id']}
+
+    booking_body2 = {"event_id": event2['id'], "reserver_id": reserver['id']}
+
+    booking_body3 = {"event_id": event3['id'], "reserver_id": reserver['id']}
+
+    reserver_id = reserver['id']
+
+    client.post(URI, json=booking_body1)
+    client.post(URI, json=booking_body2)
+    client.post(URI, json=booking_body3)
+
+    mock_date(monkeypatch, {'year': 2022, 'month': 1, 'day': 5, 'hour': 15})
+
+    response = client.get(USERS_URI + f"/{reserver_id}/" + RESERVED_URI)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    booking_body3["id"] = data[0]["id"]
+    booking_body3["verified"] = False
+    assert data[0] == booking_body3

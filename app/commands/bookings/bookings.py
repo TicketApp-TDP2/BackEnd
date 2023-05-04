@@ -63,13 +63,29 @@ class CreateBookingCommand:
 
 
 class GetBookingsByReserverCommand:
-    def __init__(self, booking_repository: BookingRepository, reserver_id: str):
+    def __init__(
+        self,
+        booking_repository: BookingRepository,
+        event_repository: EventRepository,
+        reserver_id: str,
+    ):
         self.booking_repository = booking_repository
         self.reserver_id = reserver_id
+        self.event_repository = event_repository
 
     def execute(self) -> List[BookingSchema]:
         bookings = self.booking_repository.get_bookings_by_reserver(self.reserver_id)
-        return [BookingSchema.from_model(booking) for booking in bookings]
+        events_ids = [booking.event_id for booking in bookings]
+        events_ids = [
+            event.id
+            for event in self.event_repository.get_events_by_id_with_date_filter(
+                events_ids
+            )
+        ]
+        return_bookings = [
+            booking for booking in bookings if booking.event_id in events_ids
+        ]
+        return [BookingSchema.from_model(booking) for booking in return_bookings]
 
 
 class VerifyBookingCommand:
