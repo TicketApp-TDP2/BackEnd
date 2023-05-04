@@ -6,7 +6,7 @@ from bson.son import SON
 from abc import ABC, abstractmethod
 from app.models.event import Type, Event, Location, Agenda, Faq, State, Collaborator
 from app.repositories.errors import EventNotFoundError
-from datetime import date, time
+from datetime import date, time, timedelta
 from app.utils.now import getNow
 
 EARTH_RADIUS_METERS = 6_371_000
@@ -61,6 +61,10 @@ class EventRepository(ABC):
         pass
 
     @abstractmethod
+    def get_events_by_id_with_date_filter(self, ids: List[str]) -> List[Event]:
+        pass
+
+    @abstractmethod
     def update_vacants_left_event(self, id: str, vacants_left: int) -> Event:
         pass
 
@@ -105,6 +109,24 @@ class PersistentEventRepository(EventRepository):
 
     def get_events_by_id(self, ids: List[str]) -> List[Event]:
         events = self.events.find({'_id': {'$in': ids}})
+        return list(map(self.__deserialize_event, events))
+
+    def get_events_by_id_with_date_filter(self, ids: List[str]) -> List[Event]:
+        now = getNow()
+        four_days_ago = now - timedelta(days=4)
+        pipeline = {
+            '_id': {'$in': ids},
+            '$or': [
+                {'date': {'$gt': four_days_ago.date().isoformat()}},
+                {
+                    '$and': [
+                        {'date': {'$eq': four_days_ago.date().isoformat()}},
+                        {'end_time': {'$gt': four_days_ago.time().isoformat()}},
+                    ]
+                },
+            ],
+        }
+        events = self.events.find(pipeline)
         return list(map(self.__deserialize_event, events))
 
     def update_vacants_left_event(self, id: str, vacants_left: int) -> Event:
