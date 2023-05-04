@@ -261,7 +261,8 @@ def test_search_event_by_type():
     assert not any(map(lambda e: e['name'] in data_names, [event2]))
 
 
-def test_search_event_by_organizer():
+def test_search_event_by_organizer(monkeypatch):
+    mock_date(monkeypatch, {"year": 2021, "month": 2, "day": 10, "hour": 15})
     event1 = create_event({"name": "event 1", "organizer": "omar"})
     event2 = create_event({"name": "event 2", "organizer": "juan"})
     event3 = create_event({"name": "event 3", "organizer": "omar"})
@@ -328,7 +329,8 @@ def test_search_event_without_filters_returns_everything():
     assert all(map(lambda e: e['name'] in data_names, [event1, event2, event3, event4]))
 
 
-def test_search_event_with_multiple_filters():
+def test_search_event_with_multiple_filters(monkeypatch):
+    mock_date(monkeypatch, {"year": 2021, "month": 2, "day": 10, "hour": 15})
     event1 = create_event({"name": "event 1", "organizer": "omar", "type": "Moda"})
     event2 = create_event({"name": "event 2", "organizer": "juan", "type": "Moda"})
     event3 = create_event({"name": "event 3", "organizer": "Food", "type": "Danza"})
@@ -1403,7 +1405,8 @@ def test_remove_collaborator_non_existing_event():
     assert response.json()['detail'] == 'event_not_found'
 
 
-def test_search_event_collaborator():
+def test_search_event_collaborator(monkeypatch):
+    mock_date(monkeypatch, {"year": 2021, "month": 2, "day": 10, "hour": 15})
     organizer = create_organizer_body({"id": "1234", "email": "collab@email.com"})
     organizer = client.post(ORGANIZER_URI, json=organizer).json()
     event1 = create_event({"name": "event 1", "organizer": "omar"})
@@ -1438,7 +1441,8 @@ def test_search_event_collaborator_empty():
     assert len(data) == 0
 
 
-def test_search_event_collaborator_two():
+def test_search_event_collaborator_two(monkeypatch):
+    mock_date(monkeypatch, {"year": 2021, "month": 2, "day": 10, "hour": 15})
     organizer = create_organizer_body({"id": "1234", "email": "collab@email.com"})
     organizer = client.post(ORGANIZER_URI, json=organizer).json()
     organizer2 = create_organizer_body({"id": "12342", "email": "collab2@email.com"})
@@ -1458,7 +1462,8 @@ def test_search_event_collaborator_two():
     assert len(data) == 0
 
 
-def test_search_event_collaborator_two_has_events():
+def test_search_event_collaborator_two_has_events(monkeypatch):
+    mock_date(monkeypatch, {"year": 2021, "month": 2, "day": 10, "hour": 15})
     organizer = create_organizer_body({"id": "1234", "email": "collab@email.com"})
     organizer = client.post(ORGANIZER_URI, json=organizer).json()
     organizer2 = create_organizer_body({"id": "12342", "email": "collab2@email.com"})
@@ -1483,7 +1488,8 @@ def test_search_event_collaborator_two_has_events():
     assert not any(map(lambda e: e['name'] in data_names, [event1, event4]))
 
 
-def test_search_event_collaborator_has_events_and_is_organizer():
+def test_search_event_collaborator_has_events_and_is_organizer(monkeypatch):
+    mock_date(monkeypatch, {"year": 2021, "month": 2, "day": 10, "hour": 15})
     organizer = create_organizer_body({"id": "1234", "email": "collab@email.com"})
     organizer = client.post(ORGANIZER_URI, json=organizer).json()
 
@@ -1502,3 +1508,44 @@ def test_search_event_collaborator_has_events_and_is_organizer():
     assert len(data) == 3
     assert all(map(lambda e: e['name'] in data_names, [event1, event2, event3]))
     assert not any(map(lambda e: e['name'] in data_names, [event4]))
+
+
+def test_search_event_by_organizer_4_days_ago(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 10, "hour": 15})
+
+    event1 = create_event(
+        {"name": "event 1", "organizer": "omar", "date": "2023-02-05"}
+    )
+    event2 = create_event(
+        {
+            "name": "event 2",
+            "organizer": "omar",
+            "date": "2023-02-06",
+            "start_time": "10:00",
+            "end_time": "14:00",
+            "agenda": [
+                {
+                    'time_init': '10:00',
+                    'time_end': '14:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                }
+            ],
+        }
+    )
+    event3 = create_event(
+        {"name": "event 3", "organizer": "omar", "date": "2023-02-07"}
+    )
+    event4 = create_event(
+        {"name": "event 4", "organizer": "gabriel", "date": "2023-02-11"}
+    )
+
+    response = client.get(f"{URI}?organizer=omar")
+    data = response.json()
+
+    data_names = map(lambda e: e['name'], data)
+
+    assert len(data) == 1
+    assert all(map(lambda e: e['name'] in data_names, [event3]))
+    assert not any(map(lambda e: e['name'] in data_names, [event2, event1, event4]))

@@ -161,9 +161,26 @@ class PersistentEventRepository(EventRepository):
         }
 
         if search.organizer:
-            srch['$or'] = [
-                {'organizer': search.organizer},
-                {'collaborators': {'$elemMatch': {'id': search.organizer}}},
+            now = getNow()
+            four_days_ago = now - timedelta(days=4)
+            srch["$and"] = [
+                {
+                    "$or": [
+                        {'organizer': search.organizer},
+                        {'collaborators': {'$elemMatch': {'id': search.organizer}}},
+                    ]
+                },
+                {
+                    '$or': [
+                        {'date': {'$gt': four_days_ago.date().isoformat()}},
+                        {
+                            '$and': [
+                                {'date': {'$eq': four_days_ago.date().isoformat()}},
+                                {'end_time': {'$gt': four_days_ago.time().isoformat()}},
+                            ]
+                        },
+                    ]
+                },
             ]
 
         if search.name:
