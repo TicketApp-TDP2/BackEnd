@@ -51,6 +51,7 @@ def test_organizer_create_succesfully():
     data = response.json()
     assert "id" in data
     body["id"] = data["id"]
+    body["suspended"] = False
     assert body == data
 
 
@@ -91,6 +92,7 @@ def test_organizer_create_and_retrieve_successfully():
     response = client.get(URI + f"/{id}")
     data = response.json()
     body["id"] = id
+    body["suspended"] = False
     assert body == data
 
 
@@ -122,3 +124,78 @@ def test_create_without_last_name():
     data = response.json()
     assert "id" in data
     assert data['last_name'] == body["first_name"]
+
+
+def test_suspend_organizer():
+    body = create_organizer_body()
+    id = client.post(URI, json=body).json()["id"]
+    response = client.put(URI + f"/{id}/suspend")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["suspended"] is True
+
+
+def test_get_organizer_suspended():
+    body = create_organizer_body()
+    id = client.post(URI, json=body).json()["id"]
+    client.put(URI + f"/{id}/suspend")
+    response = client.get(URI + f"/{id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["suspended"] is True
+
+
+def test_unsuspend_organizer():
+    body = create_organizer_body()
+    id = client.post(URI, json=body).json()["id"]
+    client.put(URI + f"/{id}/suspend")
+    response = client.put(URI + f"/{id}/unsuspend")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["suspended"] is False
+
+
+def test_get_organizer_unsuspended():
+    body = create_organizer_body()
+    id = client.post(URI, json=body).json()["id"]
+    client.put(URI + f"/{id}/suspend")
+    client.put(URI + f"/{id}/unsuspend")
+    response = client.get(URI + f"/{id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["suspended"] is False
+
+
+def test_suspend_organizer_twice():
+    body = create_organizer_body()
+    id = client.post(URI, json=body).json()["id"]
+    client.put(URI + f"/{id}/suspend")
+    response = client.put(URI + f"/{id}/suspend")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["suspended"] is True
+
+
+def test_unsuspend_organizer_twice():
+    body = create_organizer_body()
+    id = client.post(URI, json=body).json()["id"]
+    client.put(URI + f"/{id}/suspend")
+    client.put(URI + f"/{id}/unsuspend")
+    response = client.put(URI + f"/{id}/unsuspend")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["suspended"] is False
+
+
+def test_suspend_non_existing_organizer():
+    response = client.put(URI + "/123/suspend")
+    assert response.status_code == 400
+    data = response.json()
+    assert data["detail"] == "organizer_not_found"
+
+
+def test_unsuspend_non_existing_organizer():
+    response = client.put(URI + "/123/unsuspend")
+    assert response.status_code == 400
+    data = response.json()
+    assert data["detail"] == "organizer_not_found"

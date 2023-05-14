@@ -53,3 +53,33 @@ class TooManyFaqsError(BusinessError):
     def __init__(self):
         msg = "max_number_of_faqs_is_30"
         super().__init__(msg)
+
+
+class EventCannotBeUpdatedError(BusinessError):
+    def __init__(self):
+        msg = "event_cannot_be_updated"
+        super().__init__(msg)
+
+
+class VacantsCannotBeUpdatedError(BusinessError):
+    def __init__(self):
+        msg = "vacants_cannot_be_less_than_bookings"
+        super().__init__(msg)
+
+
+class EventCannotBeSuspendedError(BusinessError):
+    def __init__(self):
+        msg = "event_cannot_be_suspended"
+        super().__init__(msg)
+
+
+class EventCannotBeUnSuspendedError(BusinessError):
+    def __init__(self):
+        msg = "event_cannot_be_unsuspended"
+        super().__init__(msg)
+
+
+class CollaboratorNotFoundError(BusinessError):
+    def __init__(self):
+        msg = "collaborator_not_found"
+        super().__init__(msg)

@@ -20,7 +20,7 @@ def generate_invalid(correct, invalid):
 def mock_date(monkeypatch, date):
     class MyDatetime(datetime.datetime):
         @classmethod
-        def now(cls):
+        def now(cls, tz=None):
             return cls(date["year"], date["month"], date["day"], date["hour"])
 
     monkeypatch.setattr(datetime, 'datetime', MyDatetime)

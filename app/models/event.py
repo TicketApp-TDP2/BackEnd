@@ -28,6 +28,21 @@ class Faq:
         self.answer = answer
 
 
+class Collaborator:
+    def __init__(self, id: str, email: str):
+        self.id = id
+        self.email = email
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+
 class Type(Enum):
     Arte_y_Cultura = "Arte y Cultura"
     Musica = "Música"
@@ -55,6 +70,7 @@ class State(Enum):
     Publicado = "Publicado"
     Finalizado = "Finalizado"
     Cancelado = "Cancelado"
+    Suspendido = "Suspendido"
 
 
 class Event:
@@ -77,6 +93,7 @@ class Event:
         id: str,
         state: State,
         verified_vacants: int,
+        collaborators: list[Collaborator],
     ):
         self.name = name
         self.description = description
@@ -95,6 +112,7 @@ class Event:
         self.id = id
         self.state = state
         self.verified_vacants = verified_vacants
+        self.collaborators = collaborators
 
     @classmethod
     def new(
@@ -132,4 +150,5 @@ class Event:
             FAQ=FAQ,
             state=State.Borrador,
             verified_vacants=0,
+            collaborators=[],
         )

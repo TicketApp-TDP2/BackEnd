@@ -29,6 +29,14 @@ class OrganizerRepository(ABC):
     def update_organizer(self, organizer: Organizer) -> Organizer:
         pass
 
+    @abstractmethod
+    def suspend_organizer(self, id: str) -> Organizer:
+        pass
+
+    @abstractmethod
+    def unsuspend_organizer(self, id: str) -> Organizer:
+        pass
+
 
 class PersistentOrganizerRepository(OrganizerRepository):
     def __init__(self):
@@ -65,6 +73,18 @@ class PersistentOrganizerRepository(OrganizerRepository):
         self.organizers.update_one({'_id': organizer.id}, {'$set': data})
         return organizer
 
+    def suspend_organizer(self, id: str) -> Organizer:
+        organizer = self.get_organizer(id)
+        organizer.suspended = True
+        self.update_organizer(organizer)
+        return organizer
+
+    def unsuspend_organizer(self, id: str) -> Organizer:
+        organizer = self.get_organizer(id)
+        organizer.suspended = False
+        self.update_organizer(organizer)
+        return organizer
+
     def __serialize_organizer(self, organizer: Organizer) -> dict:
         serialized = {
             '_id': organizer.id,
@@ -74,6 +94,7 @@ class PersistentOrganizerRepository(OrganizerRepository):
             'profession': organizer.profession,
             'about_me': organizer.about_me,
             'profile_picture': organizer.profile_picture,
+            "suspended": organizer.suspended,
         }
 
         return serialized
@@ -87,4 +108,5 @@ class PersistentOrganizerRepository(OrganizerRepository):
             profession=data['profession'],
             about_me=data['about_me'],
             profile_picture=data['profile_picture'],
+            suspended=data['suspended'],
         )

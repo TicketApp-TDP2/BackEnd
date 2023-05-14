@@ -28,6 +28,11 @@ class FaqSchema(BaseModel):
     answer: str = Field(..., min_length=3)
 
 
+class CollaboratorSchema(BaseModel):
+    id: str = Field(..., min_length=3)
+    email: str = Field(..., min_length=3)
+
+
 class AgendaSchema(BaseModel):
     time_init: str = Field(..., min_length=3)
     time_end: str = Field(..., min_length=3)
@@ -56,11 +61,27 @@ class EventCreateSchema(EventSchemaBase):
     pass
 
 
+class EventUpdateSchema(BaseModel):
+    name: Optional[str] = Field(..., min_length=3)
+    description: Optional[str] = Field(..., min_length=3)
+    location: Optional[LocationSchema]
+    type: Optional[Type]
+    images: Optional[List[str]] = Field(..., min_length=1)
+    preview_image: Optional[str] = Field(..., min_length=1)
+    date: Optional[date]
+    start_time: Optional[time]
+    end_time: Optional[time]
+    agenda: Optional[List[AgendaSchema]]
+    vacants: Optional[int] = Field(..., ge=1)
+    FAQ: Optional[List[FaqSchema]]
+
+
 class EventSchema(EventSchemaBase):
     id: str = Field(..., min_length=1)
     vacants_left: int = Field(..., ge=0)
     state: State
     verified_vacants: int
+    collaborators: List[CollaboratorSchema]
 
     @classmethod
     def from_model(cls, event: Event) -> EventSchema:
@@ -88,6 +109,14 @@ class EventSchema(EventSchemaBase):
             for element in event.FAQ
         ]
 
+        collaborators = [
+            CollaboratorSchema(
+                id=element.id,
+                email=element.email,
+            )
+            for element in event.collaborators
+        ]
+
         return EventSchema(
             name=event.name,
             description=event.description,
@@ -106,4 +135,5 @@ class EventSchema(EventSchemaBase):
             id=event.id,
             state=State(event.state),
             verified_vacants=event.verified_vacants,
+            collaborators=collaborators,
         )

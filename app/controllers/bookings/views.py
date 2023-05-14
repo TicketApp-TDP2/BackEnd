@@ -4,8 +4,13 @@ from app.repositories.event import PersistentEventRepository
 from fastapi import status, APIRouter
 from app.config.logger import setup_logger
 from app.schemas.bookings import BookingCreateSchema, BookingSchema, verifyBookingSchema
-from app.commands.bookings import CreateBookingCommand, VerifyBookingCommand
+from app.commands.bookings import (
+    CreateBookingCommand,
+    VerifyBookingCommand,
+    GetBookingsByEventCommand,
+)
 from app.utils.error import TicketAppError
+from typing import List
 
 
 logger = setup_logger(name=__name__)
@@ -52,3 +57,22 @@ async def verify_booking(id: str, verify_body: verifyBookingSchema):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Error"
         )
     return booking
+
+
+@router.get(
+    '/bookings/event/{event_id}',
+    status_code=status.HTTP_200_OK,
+    response_model=List[BookingSchema],
+)
+async def get_bookings_by_event(event_id: str):
+    try:
+        repository = PersistentBookingRepository()
+        bookings = GetBookingsByEventCommand(repository, event_id).execute()
+    except TicketAppError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Error"
+        )
+    return bookings

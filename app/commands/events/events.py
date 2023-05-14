@@ -1,10 +1,7 @@
 import json
 from typing import List
-from app.models.event import Agenda, Event, Faq, Location, State
-from app.schemas.event import (
-    EventCreateSchema,
-    EventSchema,
-)
+from app.models.event import Agenda, Event, Faq, Location, State, Collaborator
+from app.schemas.event import EventCreateSchema, EventSchema, EventUpdateSchema
 from .errors import (
     EventAlreadyExistsError,
     EventNotFoundError,
@@ -15,14 +12,20 @@ from .errors import (
     EventNotBorradorError,
     TooManyImagesError,
     TooManyFaqsError,
+    EventCannotBeUpdatedError,
+    VacantsCannotBeUpdatedError,
+    EventCannotBeSuspendedError,
+    EventCannotBeUnSuspendedError,
+    CollaboratorNotFoundError,
 )
 from app.repositories.event import (
     EventRepository,
     Search,
 )
+from app.repositories.organizers import OrganizerRepository
 from app.config.logger import setup_logger
 from datetime import time
-import datetime
+from app.utils.now import getNow
 
 logger = setup_logger(__name__)
 
@@ -116,8 +119,16 @@ class GetEventCommand:
         if not exists:
             raise EventNotFoundError
         event = self.event_repository.get_event(self.id)
+        event_with_finished = self.check_finished(event)
 
-        return EventSchema.from_model(event)
+        return EventSchema.from_model(event_with_finished)
+
+    def check_finished(self, event: Event) -> Event:
+        now = getNow().date()
+        time = getNow().time()
+        if event.date < now or (event.date == now and event.end_time < time):
+            event = self.event_repository.update_state_event(event.id, State.Finalizado)
+        return event
 
 
 class SearchEventsCommand:
@@ -138,8 +149,8 @@ class SearchEventsCommand:
         return list(map(EventSchema.from_model, events_ordered))
 
     def check_finished(self, events: List[Event]) -> List[Event]:
-        now = datetime.datetime.now().date()
-        time = datetime.datetime.now().time()
+        now = getNow().date()
+        time = getNow().time()
         new_events = []
         for event in events:
             if event.date < now or (event.date == now and event.end_time < time):
@@ -177,4 +188,187 @@ class CancelEventCommand:
         if not exists:
             raise EventNotFoundError
         event = self.event_repository.update_state_event(self.id, State.Cancelado)
+        return EventSchema.from_model(event)
+
+
+class UpdateEventCommand:
+    def __init__(
+        self,
+        event_repository: EventRepository,
+        update: EventUpdateSchema,
+        id: str,
+    ):
+        self.event_repository = event_repository
+        self.update = update
+        self.id = id
+
+    def execute(self) -> EventSchema:
+        event = self.event_repository.get_event(self.id)
+        if event.state != State.Borrador and event.state != State.Publicado:
+            raise EventCannotBeUpdatedError
+        if (
+            self.update.vacants
+            and self.update.vacants < event.vacants - event.vacants_left
+        ):
+            raise VacantsCannotBeUpdatedError
+        if self.update.location:
+            location = Location(
+                description=self.update.location.description,
+                lat=self.update.location.lat,
+                lng=self.update.location.lng,
+            )
+        if self.update.agenda:
+            agenda = [
+                Agenda(
+                    time_init=element.time_init,
+                    time_end=element.time_end,
+                    owner=element.owner,
+                    title=element.title,
+                    description=element.description,
+                )
+                for element in self.update.agenda
+            ]
+        if self.update.FAQ:
+            faq = [
+                Faq(
+                    question=element.question,
+                    answer=element.answer,
+                )
+                for element in self.update.FAQ
+            ]
+            if len(faq) > 30:
+                raise TooManyFaqsError
+        event = Event(
+            id=event.id,
+            name=self.update.name if self.update.name else event.name,
+            description=self.update.description
+            if self.update.description
+            else event.description,
+            location=location if self.update.location else event.location,
+            type=self.update.type if self.update.type else event.type,
+            images=self.update.images if self.update.images else event.images,
+            preview_image=self.update.preview_image
+            if self.update.preview_image
+            else event.preview_image,
+            date=self.update.date if self.update.date else event.date,
+            organizer=event.organizer,
+            start_time=self.update.start_time
+            if self.update.start_time
+            else event.start_time,
+            end_time=self.update.end_time if self.update.end_time else event.end_time,
+            agenda=agenda if self.update.agenda else event.agenda,
+            vacants=self.update.vacants if self.update.vacants else event.vacants,
+            vacants_left=(self.update.vacants - (event.vacants - event.vacants_left))
+            if self.update.vacants
+            else event.vacants_left,
+            FAQ=faq if self.update.FAQ else event.FAQ,
+            state=event.state,
+            verified_vacants=event.verified_vacants,
+            collaborators=event.collaborators,
+        )
+        event = self.event_repository.update_event(event)
+
+        return EventSchema.from_model(event)
+
+
+class SuspendEventCommand:
+    def __init__(self, event_repository: EventRepository, _id: str):
+        self.event_repository = event_repository
+        self.id = _id
+
+    def execute(self) -> EventSchema:
+        exists = self.event_repository.event_exists(self.id)
+        if not exists:
+            raise EventNotFoundError
+        event = self.event_repository.get_event(self.id)
+        if event.state == State.Publicado:
+            event = self.event_repository.update_state_event(self.id, State.Suspendido)
+        else:
+            raise EventCannotBeSuspendedError
+        return EventSchema.from_model(event)
+
+
+class UnSuspendEventCommand:
+    def __init__(self, event_repository: EventRepository, _id: str):
+        self.event_repository = event_repository
+        self.id = _id
+
+    def execute(self) -> EventSchema:
+        exists = self.event_repository.event_exists(self.id)
+        if not exists:
+            raise EventNotFoundError
+        event = self.event_repository.get_event(self.id)
+        if event.state == State.Suspendido:
+            event = self.event_repository.update_state_event(self.id, State.Publicado)
+        else:
+            raise EventCannotBeUnSuspendedError
+        return EventSchema.from_model(event)
+
+
+class AddCollaboratorEventCommand:
+    def __init__(
+        self,
+        event_repository: EventRepository,
+        organizer_repository: OrganizerRepository,
+        _id: str,
+        collaborator_email: str,
+    ):
+        self.event_repository = event_repository
+        self.organizer_repository = organizer_repository
+        self.id = _id
+        self.collaborator_email = collaborator_email
+
+    def execute(self) -> EventSchema:
+        exists = self.event_repository.event_exists(self.id)
+        if not exists:
+            raise EventNotFoundError
+        collaborator_exists = self.organizer_repository.organizer_exists_by_email(
+            self.collaborator_email
+        )
+        if not collaborator_exists:
+            raise CollaboratorNotFoundError
+        collaborator = self.organizer_repository.get_organizer_by_email(
+            self.collaborator_email
+        )
+        event = self.event_repository.get_event(self.id)
+        collaborators = event.collaborators
+        collaborator = Collaborator(id=collaborator.id, email=collaborator.email)
+        if collaborator not in collaborators:
+            collaborators.append(collaborator)
+        event.collaborators = collaborators
+        event = self.event_repository.update_event(event)
+        return EventSchema.from_model(event)
+
+
+class RemoveCollaboratorEventCommand:
+    def __init__(
+        self,
+        event_repository: EventRepository,
+        organizer_repository: OrganizerRepository,
+        _id: str,
+        collaborator_id: str,
+    ):
+        self.event_repository = event_repository
+        self.organizer_repository = organizer_repository
+        self.id = _id
+        self.collaborator_id = collaborator_id
+
+    def execute(self) -> EventSchema:
+        exists = self.event_repository.event_exists(self.id)
+        if not exists:
+            raise EventNotFoundError
+        event = self.event_repository.get_event(self.id)
+        collaborators = event.collaborators
+
+        collaborator_exists = self.organizer_repository.organizer_exists(
+            self.collaborator_id
+        )
+        if collaborator_exists:
+            collaborator = self.organizer_repository.get_organizer(self.collaborator_id)
+            collaborator = Collaborator(id=collaborator.id, email=collaborator.email)
+            if collaborator in collaborators:
+                collaborators.remove(collaborator)
+            event.collaborators = collaborators
+
+        event = self.event_repository.update_event(event)
         return EventSchema.from_model(event)

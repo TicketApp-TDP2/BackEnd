@@ -11,6 +11,7 @@ class Organizer:
         profession: str,
         about_me: str,
         profile_picture: str,
+        suspended: bool,
     ):
         self.first_name = first_name
         self.last_name = last_name
@@ -19,4 +20,4 @@ class Organizer:
         self.profession = profession
         self.about_me = about_me
         self.profile_picture = profile_picture
-
+        self.suspended = suspended

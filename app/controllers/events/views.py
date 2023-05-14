@@ -1,5 +1,6 @@
 from fastapi.exceptions import HTTPException
 from app.repositories.event import PersistentEventRepository
+from app.repositories.organizers import PersistentOrganizerRepository
 from app.commands.events.events import SearchEventsCommand
 from app.parsers.search_parser import SearchEventsParser
 from typing import List
@@ -9,12 +10,18 @@ from app.schemas.event import (
     EventCreateSchema,
     EventSchema,
     SearchEvent,
+    EventUpdateSchema,
 )
 from app.commands.events import (
     CreateEventCommand,
     GetEventCommand,
     PublishEventCommand,
     CancelEventCommand,
+    UpdateEventCommand,
+    SuspendEventCommand,
+    UnSuspendEventCommand,
+    AddCollaboratorEventCommand,
+    RemoveCollaboratorEventCommand,
 )
 from app.utils.error import TicketAppError
 
@@ -116,6 +123,112 @@ async def cancel_event(id: str):
     try:
         repository = PersistentEventRepository()
         event = CancelEventCommand(repository, id).execute()
+        return event
+    except TicketAppError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Error"
+        )
+
+
+@router.put(
+    '/events/{id}',
+    status_code=status.HTTP_201_CREATED,
+    response_model=EventSchema,
+    tags=["Events"],
+)
+async def update_event(id: str, update_body: EventUpdateSchema):
+    try:
+        repository = PersistentEventRepository()
+        user = UpdateEventCommand(repository, update_body, id).execute()
+    except TicketAppError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Error"
+        )
+    return user
+
+
+@router.put(
+    '/events/{id}/suspend',
+    status_code=status.HTTP_200_OK,
+    response_model=EventSchema,
+    tags=["Events"],
+)
+async def suspend_event(id: str):
+    try:
+        repository = PersistentEventRepository()
+        event = SuspendEventCommand(repository, id).execute()
+        return event
+    except TicketAppError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Error"
+        )
+
+
+@router.put(
+    '/events/{id}/unsuspend',
+    status_code=status.HTTP_200_OK,
+    response_model=EventSchema,
+    tags=["Events"],
+)
+async def unsuspend_event(id: str):
+    try:
+        repository = PersistentEventRepository()
+        event = UnSuspendEventCommand(repository, id).execute()
+        return event
+    except TicketAppError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Error"
+        )
+
+
+@router.put(
+    '/events/{id}/add_collaborator/{collaborator_email}',
+    status_code=status.HTTP_200_OK,
+    response_model=EventSchema,
+    tags=["Events"],
+)
+async def add_collaborator_event(id: str, collaborator_email: str):
+    try:
+        repository = PersistentEventRepository()
+        organizer_repository = PersistentOrganizerRepository()
+        event = AddCollaboratorEventCommand(
+            repository, organizer_repository, id, collaborator_email
+        ).execute()
+        return event
+    except TicketAppError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Error"
+        )
+
+
+@router.put(
+    '/events/{id}/remove_collaborator/{collaborator_id}',
+    status_code=status.HTTP_200_OK,
+    response_model=EventSchema,
+    tags=["Events"],
+)
+async def remove_collaborator_event(id: str, collaborator_id: str):
+    try:
+        repository = PersistentEventRepository()
+        organizer_repository = PersistentOrganizerRepository()
+        event = RemoveCollaboratorEventCommand(
+            repository, organizer_repository, id, collaborator_id
+        ).execute()
         return event
     except TicketAppError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

@@ -28,6 +28,8 @@ class OrganizerUpdateSchema(BaseModel):
 
 
 class OrganizerSchema(OrganizerSchemaBase):
+    suspended: bool
+
     @classmethod
     def from_model(cls, organizer: Organizer) -> OrganizerSchema:
         return OrganizerSchema(
@@ -40,4 +42,5 @@ class OrganizerSchema(OrganizerSchemaBase):
             profile_picture=organizer.profile_picture
             if organizer.profile_picture
             else "https://i.pinimg.com/736x/83/bc/8b/83bc8b88cf6bc4b4e04d153a418cde62.jpg",
+            suspended=organizer.suspended,
         )

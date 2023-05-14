@@ -4,10 +4,10 @@ from app.repositories.config import db
 from pymongo import GEOSPHERE
 from bson.son import SON
 from abc import ABC, abstractmethod
-from app.models.event import Type, Event, Location, Agenda, Faq, State
+from app.models.event import Type, Event, Location, Agenda, Faq, State, Collaborator
 from app.repositories.errors import EventNotFoundError
-from datetime import date, time
-import datetime
+from datetime import date, time, timedelta
+from app.utils.now import getNow
 
 EARTH_RADIUS_METERS = 6_371_000
 
@@ -61,6 +61,10 @@ class EventRepository(ABC):
         pass
 
     @abstractmethod
+    def get_events_by_id_with_date_filter(self, ids: List[str]) -> List[Event]:
+        pass
+
+    @abstractmethod
     def update_vacants_left_event(self, id: str, vacants_left: int) -> Event:
         pass
 
@@ -70,6 +74,10 @@ class EventRepository(ABC):
 
     @abstractmethod
     def update_verified_vacants(self, id: str, verified_vacants: int) -> Event:
+        pass
+
+    @abstractmethod
+    def update_event(self, id: str, event: Event) -> Event:
         pass
 
 
@@ -103,6 +111,24 @@ class PersistentEventRepository(EventRepository):
         events = self.events.find({'_id': {'$in': ids}})
         return list(map(self.__deserialize_event, events))
 
+    def get_events_by_id_with_date_filter(self, ids: List[str]) -> List[Event]:
+        now = getNow()
+        four_days_ago = now - timedelta(days=4)
+        pipeline = {
+            '_id': {'$in': ids},
+            '$or': [
+                {'date': {'$gt': four_days_ago.date().isoformat()}},
+                {
+                    '$and': [
+                        {'date': {'$eq': four_days_ago.date().isoformat()}},
+                        {'end_time': {'$gt': four_days_ago.time().isoformat()}},
+                    ]
+                },
+            ],
+        }
+        events = self.events.find(pipeline)
+        return list(map(self.__deserialize_event, events))
+
     def update_vacants_left_event(self, id: str, vacants_left: int) -> Event:
         event = self.get_event(id)
         event.vacants_left = vacants_left
@@ -124,11 +150,38 @@ class PersistentEventRepository(EventRepository):
         self.events.update_one({'_id': id}, {'$set': data})
         return event
 
+    def update_event(self, event: Event) -> Event:
+        data = self.__serialize_event(event)
+        self.events.update_one({'_id': event.id}, {'$set': data})
+        return event
+
     def __serialize_search(self, search: Search) -> dict:
         srch = {
-            'organizer': search.organizer,
             'type': search.type and search.type.value,
         }
+
+        if search.organizer:
+            now = getNow()
+            four_days_ago = now - timedelta(days=4)
+            srch["$and"] = [
+                {
+                    "$or": [
+                        {'organizer': search.organizer},
+                        {'collaborators': {'$elemMatch': {'id': search.organizer}}},
+                    ]
+                },
+                {
+                    '$or': [
+                        {'date': {'$gt': four_days_ago.date().isoformat()}},
+                        {
+                            '$and': [
+                                {'date': {'$eq': four_days_ago.date().isoformat()}},
+                                {'end_time': {'$gt': four_days_ago.time().isoformat()}},
+                            ]
+                        },
+                    ]
+                },
+            ]
 
         if search.name:
             srch['name'] = {'$regex': search.name, '$options': 'i'}
@@ -137,7 +190,7 @@ class PersistentEventRepository(EventRepository):
             srch['state'] = State.Publicado.value
 
         if search.not_finished:
-            now = datetime.datetime.now()
+            now = getNow()
             srch['$or'] = [
                 {
                     '$and': [
@@ -188,9 +241,20 @@ class PersistentEventRepository(EventRepository):
         ]
         return serialized_faq
 
+    def __serialize_collaborators(self, collaborators):
+        serialized_collaborators = [
+            {
+                'id': element.id,
+                'email': element.email,
+            }
+            for element in collaborators
+        ]
+        return serialized_collaborators
+
     def __serialize_event(self, event: Event) -> dict:
         serialized_agenda = self.__serialize_agenda(event.agenda)
         serialized_faq = self.__serialize_faq(event.FAQ)
+        serialized_collaborators = self.__serialize_collaborators(event.collaborators)
 
         serialized = {
             'name': event.name,
@@ -214,6 +278,7 @@ class PersistentEventRepository(EventRepository):
             '_id': event.id,
             'state': event.state.value,
             'verified_vacants': event.verified_vacants,
+            'collaborators': serialized_collaborators,
         }
 
         return serialized
@@ -241,9 +306,22 @@ class PersistentEventRepository(EventRepository):
         ]
         return deserialized_faq
 
+    def __deserialize_collaborators(self, collaborators):
+        deserialized_collaborators = [
+            Collaborator(
+                id=element['id'],
+                email=element['email'],
+            )
+            for element in collaborators
+        ]
+        return deserialized_collaborators
+
     def __deserialize_event(self, data: dict) -> Event:
         deserialized_agenda = self.__deserialize_agenda(data['agenda'])
         deserialized_faq = self.__deserialize_faq(data['FAQ'])
+        deserialized_collaborators = self.__deserialize_collaborators(
+            data['collaborators']
+        )
 
         return Event(
             id=data['_id'],
@@ -267,4 +345,5 @@ class PersistentEventRepository(EventRepository):
             FAQ=deserialized_faq,
             state=State(data['state']),
             verified_vacants=data['verified_vacants'],
+            collaborators=deserialized_collaborators,
         )

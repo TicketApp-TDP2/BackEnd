@@ -9,6 +9,7 @@ from typing import List
 from app.schemas.bookings import BookingSchema
 from app.commands.bookings import GetBookingsByReserverCommand
 from app.repositories.bookings import PersistentBookingRepository
+from app.repositories.event import PersistentEventRepository
 
 
 logger = setup_logger(name=__name__)
@@ -64,7 +65,10 @@ async def get_user(id: str):
 async def get_user_bookings_reserved(id: str):
     try:
         repository = PersistentBookingRepository()
-        bookings = GetBookingsByReserverCommand(repository, id).execute()
+        event_repository = PersistentEventRepository()
+        bookings = GetBookingsByReserverCommand(
+            repository, event_repository, id
+        ).execute()
     except TicketAppError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:

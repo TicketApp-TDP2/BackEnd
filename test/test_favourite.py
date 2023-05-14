@@ -2,6 +2,7 @@ from fastapi.testclient import TestClient
 import pytest
 
 from app.app import app
+from utils import mock_date
 
 client = TestClient(app)
 
@@ -28,7 +29,7 @@ def create_user():
     return response.json()
 
 
-def create_event():
+def create_event(fields={}):
     body = {
         'name': 'aName',
         'description': 'aDescription',
@@ -61,6 +62,8 @@ def create_event():
             }
         ],
     }
+    for k, v in fields.items():
+        body[k] = v
 
     response = client.post("api/events", json=body)
     return response.json()
@@ -95,13 +98,14 @@ def test_user_without_favourites():
     assert data == []
 
 
-def test_create_favourite_succesfully():
+def test_create_favourite_succesfully(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 3, "hour": 17})
     # Create user
     user = create_user()
     user_id = user['id']
 
     # Create event
-    event = create_event()
+    event = create_event({'date': '2023-03-29'})
     event_id = event['id']
 
     # Create favourite
@@ -114,13 +118,14 @@ def test_create_favourite_succesfully():
     assert response.json() == favourite
 
 
-def test_user_with_one_favourite():
+def test_user_with_one_favourite(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 3, "hour": 17})
     # Create user
     user = create_user()
     user_id = user['id']
 
     # Create event
-    event = create_event()
+    event = create_event({'date': '2023-03-29'})
     event_id = event['id']
 
     # Create favourite
@@ -135,13 +140,14 @@ def test_user_with_one_favourite():
     assert data == [event]
 
 
-def test_user_with_multiple_favourites():
+def test_user_with_multiple_favourites(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 3, "hour": 17})
     # Create user
     user = create_user()
     user_id = user['id']
 
     # Create first event
-    event_1 = create_event()
+    event_1 = create_event({'date': '2023-03-29'})
     event_id = event_1['id']
 
     # Create first favourite
@@ -149,7 +155,7 @@ def test_user_with_multiple_favourites():
     client.post(favourites_uri(user_id), json=favourite)
 
     # Create second event
-    event_2 = create_event()
+    event_2 = create_event({'date': '2023-03-29'})
     event_id = event_2['id']
 
     # Create second favourite
@@ -194,13 +200,14 @@ def test_create_favourite_event_not_exists():
     assert data['detail'] == 'event_not_found'
 
 
-def test_delete_favourite_returns_empty_array():
+def test_delete_favourite_returns_empty_array(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 3, "hour": 17})
     # Create user
     user = create_user()
     user_id = user['id']
 
     # Create event
-    event = create_event()
+    event = create_event({'date': '2023-03-29'})
     event_id = event['id']
 
     # Create favourite
@@ -221,13 +228,14 @@ def test_delete_favourite_returns_empty_array():
     assert data == []
 
 
-def test_delete_favourite_user_with_multiple_favourites():
+def test_delete_favourite_user_with_multiple_favourites(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 3, "hour": 17})
     # Create user
     user = create_user()
     user_id = user['id']
 
     # Create first event
-    event_1 = create_event()
+    event_1 = create_event({'date': '2023-03-29'})
     event_id = event_1['id']
 
     # Create first favourite
@@ -235,7 +243,7 @@ def test_delete_favourite_user_with_multiple_favourites():
     client.post(favourites_uri(user_id), json=favourite)
 
     # Create second event
-    event_2 = create_event()
+    event_2 = create_event({'date': '2023-03-29'})
     event_id = event_2['id']
 
     # Create second favourite
@@ -280,3 +288,112 @@ def test_delete_favourite_favourite_not_exist_is_ignored():
 
     assert response.status_code == 200
     assert favourites == []
+
+
+def test_favourites_after_4_days(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 3, "hour": 17})
+
+    # Create user
+    user = create_user()
+    user_id = user['id']
+
+    # Create first event
+    event_1 = create_event(
+        {
+            "date": "2023-01-29",
+            "start_time": "15:00:00",
+            "end_time": "16:00:00",
+            "agenda": [
+                {
+                    'time_init': '15:00',
+                    'time_end': '16:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                }
+            ],
+        }
+    )
+    event_id = event_1['id']
+
+    # Create first favourite
+    favourite = {'event_id': event_id}
+    client.post(favourites_uri(user_id), json=favourite)
+
+    # Create second event
+    event_2 = create_event(
+        {
+            "date": "2023-01-30",
+            "start_time": "15:00:00",
+            "end_time": "16:00:00",
+            "agenda": [
+                {
+                    'time_init': '15:00',
+                    'time_end': '16:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                }
+            ],
+        }
+    )
+    event_id = event_2['id']
+
+    # Create second favourite
+    favourite = {'event_id': event_id}
+    client.post(favourites_uri(user_id), json=favourite)
+
+    # Create third event
+    event_3 = create_event(
+        {
+            "date": "2023-01-31",
+            "start_time": "15:00:00",
+            "end_time": "19:00:00",
+            "agenda": [
+                {
+                    'time_init': '15:00',
+                    'time_end': '19:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                }
+            ],
+        }
+    )
+    event_id = event_3['id']
+
+    # Create third favourite
+    favourite = {'event_id': event_id}
+    client.post(favourites_uri(user_id), json=favourite)
+
+    # Create fourth event
+    event_4 = create_event(
+        {
+            "date": "2023-02-02",
+            "start_time": "15:00:00",
+            "end_time": "19:00:00",
+            "agenda": [
+                {
+                    'time_init': '15:00',
+                    'time_end': '19:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                }
+            ],
+        }
+    )
+    event_id = event_4['id']
+
+    # Create fourth favourite
+    favourite = {'event_id': event_id}
+    client.post(favourites_uri(user_id), json=favourite)
+
+    # Get user favourites
+    response = client.get(favourites_uri(user_id))
+    data = response.json()
+
+    assert response.status_code == 200
+    assert len(data) == 2
+    assert event_3 in data
+    assert event_4 in data

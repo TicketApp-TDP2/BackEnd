@@ -17,7 +17,7 @@ from app.config.logger import setup_logger
 import uuid
 from typing import List
 from app.schemas.event import State
-import datetime
+from app.utils.now import getNow
 
 logger = setup_logger(__name__)
 
@@ -50,8 +50,8 @@ class CreateBookingCommand:
             raise EventFullError
         if event.state != State.Publicado:
             raise EventNotPublishedError
-        now = datetime.datetime.now().date()
-        time = datetime.datetime.now().time()
+        now = getNow().date()
+        time = getNow().time()
         if event.date < now or (event.date == now and event.end_time < time):
             raise EventFinishedError
         self.event_repository.update_vacants_left_event(
@@ -63,13 +63,29 @@ class CreateBookingCommand:
 
 
 class GetBookingsByReserverCommand:
-    def __init__(self, booking_repository: BookingRepository, reserver_id: str):
+    def __init__(
+        self,
+        booking_repository: BookingRepository,
+        event_repository: EventRepository,
+        reserver_id: str,
+    ):
         self.booking_repository = booking_repository
         self.reserver_id = reserver_id
+        self.event_repository = event_repository
 
     def execute(self) -> List[BookingSchema]:
         bookings = self.booking_repository.get_bookings_by_reserver(self.reserver_id)
-        return [BookingSchema.from_model(booking) for booking in bookings]
+        events_ids = [booking.event_id for booking in bookings]
+        events_ids = [
+            event.id
+            for event in self.event_repository.get_events_by_id_with_date_filter(
+                events_ids
+            )
+        ]
+        return_bookings = [
+            booking for booking in bookings if booking.event_id in events_ids
+        ]
+        return [BookingSchema.from_model(booking) for booking in return_bookings]
 
 
 class VerifyBookingCommand:
@@ -98,3 +114,13 @@ class VerifyBookingCommand:
         )
 
         return BookingSchema.from_model(booking)
+
+
+class GetBookingsByEventCommand:
+    def __init__(self, booking_repository: BookingRepository, event_id: str):
+        self.booking_repository = booking_repository
+        self.event_id = event_id
+
+    def execute(self) -> List[BookingSchema]:
+        bookings = self.booking_repository.get_bookings_by_event(self.event_id)
+        return [BookingSchema.from_model(booking) for booking in bookings]

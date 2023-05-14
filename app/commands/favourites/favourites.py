@@ -28,7 +28,6 @@ class AddFavouriteCommand:
         self.user_id = user_id
 
     def execute(self) -> None:
-
         event_id = self.favourite.event_id
         user_id = self.user_id
 
@@ -63,7 +62,9 @@ class GetFavouritesCommand:
         except Exception:
             raise UserNotFoundError
 
-        events = self.event_repository.get_events_by_id(user.favourites)
+        events = self.event_repository.get_events_by_id_with_date_filter(
+            user.favourites
+        )
 
         return list(map(lambda x: EventSchema.from_model(x), events))
 
