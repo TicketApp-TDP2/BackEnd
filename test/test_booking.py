@@ -627,3 +627,25 @@ def test_bookings_after_4_days(monkeypatch):
     booking_body3["verified"] = False
     booking_body3["verified_time"] = "Not_verified"
     assert data[0] == booking_body3
+
+
+def test_verify_booking_has_date(monkeypatch):
+    mock_date(monkeypatch, {'year': 2021, 'month': 1, 'day': 5, 'hour': 15, "min": 20})
+
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
+    event = create_event({'owner': organizer['id']})
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
+
+    event_id = event['id']
+    booking_body = {"event_id": event_id, "reserver_id": reserver['id']}
+    response = client.post(URI, json=booking_body)
+    data = response.json()
+    booking_id = data['id']
+
+    body = {"event_id": event_id}
+    response = client.put(URI + f'/{booking_id}/verify', json=body)
+    response_data = response.json()
+    assert response.status_code == 200
+    assert response_data['verified'] is True
+    assert response_data['verified_time'] == "2021-01-05 15:20"

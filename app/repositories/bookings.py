@@ -2,6 +2,7 @@ from app.repositories.config import db
 from abc import ABC, abstractmethod
 from app.models.booking import Booking
 from app.repositories.errors import BookingNotFoundError
+from app.utils.now import getNow
 
 
 class BookingRepository(ABC):
@@ -63,6 +64,8 @@ class PersistentBookingRepository(BookingRepository):
     def verify_booking(self, booking_id: str) -> Booking:
         booking = self.get_booking(booking_id)
         booking.verified = True
+        now = getNow()
+        booking.verified_time = now.strftime('%Y-%m-%d %H:%M')
         data = self.__serialize_booking(booking)
         self.bookings.update_one({'_id': booking_id}, {'$set': data})
         return booking
