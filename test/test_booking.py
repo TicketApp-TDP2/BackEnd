@@ -649,3 +649,45 @@ def test_verify_booking_has_date(monkeypatch):
     assert response.status_code == 200
     assert response_data['verified'] is True
     assert response_data['verified_time'] == "2021-01-05 15:20"
+
+
+def test_get_verified_bookings(monkeypatch):
+    mock_date(monkeypatch, {'year': 2021, 'month': 1, 'day': 5, 'hour': 15, "min": 20})
+
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
+    reserver2 = create_user({'email': 'reserver2@mail.com', 'id': '2342'})
+    reserver3 = create_user({'email': 'reserver3@mail.com', 'id': '2332'})
+    event = create_event({'owner': organizer['id']})
+    event2 = create_event({'owner': organizer['id']})
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
+    client.put(f"{EVENTS_URI}/{event2['id']}/publish")
+
+    event_id = event['id']
+    booking_body = {"event_id": event_id, "reserver_id": reserver['id']}
+    booking_body2 = {"event_id": event_id, "reserver_id": reserver2['id']}
+    booking_body3 = {"event_id": event_id, "reserver_id": reserver3['id']}
+    booking_body4 = {"event_id": event2['id'], "reserver_id": reserver3['id']}
+    response = client.post(URI, json=booking_body)
+    data = response.json()
+    booking1_id = data['id']
+    response = client.post(URI, json=booking_body2)
+    data = response.json()
+    booking2_id = data['id']
+    client.post(URI, json=booking_body3)
+    response = client.post(URI, json=booking_body4)
+    data = response.json()
+    booking4_id = data['id']
+
+    body = {"event_id": event_id}
+    client.put(URI + f'/{booking1_id}/verify', json=body)
+    mock_date(monkeypatch, {'year': 2021, 'month': 1, 'day': 5, 'hour': 14, "min": 15})
+    client.put(URI + f'/{booking2_id}/verify', json=body)
+    client.put(URI + f'/{booking4_id}/verify', json=body)
+
+    response = client.get(URI + f'/event/{event_id}/verified')
+    data = response.json()
+    assert response.status_code == 200
+    assert len(data) == 2
+    assert data[0]["id"] == booking2_id
+    assert data[1]["id"] == booking1_id

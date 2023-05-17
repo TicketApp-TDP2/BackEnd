@@ -30,6 +30,10 @@ class BookingRepository(ABC):
     def get_bookings_by_event(self, event_id: str) -> list[Booking]:
         pass
 
+    @abstractmethod
+    def get_bookings_by_event_verified(self, event_id: str) -> list[Booking]:
+        pass
+
 
 class PersistentBookingRepository(BookingRepository):
     def __init__(self):
@@ -53,6 +57,10 @@ class PersistentBookingRepository(BookingRepository):
 
     def get_bookings_by_event(self, event_id: str) -> list[Booking]:
         bookings = self.bookings.find({'event_id': event_id})
+        return [self.__deserialize_booking(booking) for booking in bookings]
+
+    def get_bookings_by_event_verified(self, event_id: str) -> list[Booking]:
+        bookings = self.bookings.find({'event_id': event_id, 'verified': True})
         return [self.__deserialize_booking(booking) for booking in bookings]
 
     def get_booking(self, booking_id: str) -> Booking:
