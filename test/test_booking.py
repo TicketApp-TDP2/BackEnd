@@ -121,6 +121,7 @@ def test_booking_create_succesfully(monkeypatch):
     assert 'id' in response_data
     booking_body["id"] = response_data["id"]
     booking_body["verified"] = False
+    booking_body["verified_time"] = "Not_verified"
     assert response_data == booking_body
 
 
@@ -200,12 +201,14 @@ def test_booking_create_with_2_reservers(monkeypatch):
     assert 'id' in response_data1
     booking_body1["id"] = response_data1["id"]
     booking_body1["verified"] = False
+    booking_body1["verified_time"] = "Not_verified"
     assert response_data1 == booking_body1
 
     assert response2.status_code == 201
     assert 'id' in response_data2
     booking_body2["id"] = response_data2["id"]
     booking_body2["verified"] = False
+    booking_body2["verified_time"] = "Not_verified"
     assert response_data2 == booking_body2
 
 
@@ -236,6 +239,7 @@ def test_booking_get_by_reserver_one(monkeypatch):
     assert len(data) == 1
     booking_body["id"] = data[0]["id"]
     booking_body["verified"] = False
+    booking_body["verified_time"] = "Not_verified"
     assert data[0] == booking_body
 
 
@@ -263,8 +267,10 @@ def test_booking_get_by_reserver_two(monkeypatch):
     assert len(data) == 2
     booking_body1["id"] = data[0]["id"]
     booking_body1["verified"] = False
+    booking_body1["verified_time"] = "Not_verified"
     booking_body2["id"] = data[1]["id"]
     booking_body2["verified"] = False
+    booking_body2["verified_time"] = "Not_verified"
     assert data[0] == booking_body1
     assert data[1] == booking_body2
 
@@ -619,4 +625,5 @@ def test_bookings_after_4_days(monkeypatch):
     assert len(data) == 1
     booking_body3["id"] = data[0]["id"]
     booking_body3["verified"] = False
+    booking_body3["verified_time"] = "Not_verified"
     assert data[0] == booking_body3

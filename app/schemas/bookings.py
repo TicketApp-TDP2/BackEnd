@@ -19,6 +19,7 @@ class verifyBookingSchema(BaseModel):
 class BookingSchema(BookingSchemaBase):
     id: str = Field(..., min_length=1)
     verified: bool
+    verified_time: str
 
     @classmethod
     def from_model(cls, booking: Booking) -> BookingSchema:
@@ -27,4 +28,5 @@ class BookingSchema(BookingSchemaBase):
             reserver_id=booking.reserver_id,
             id=booking.id,
             verified=booking.verified,
+            verified_time=booking.verified_time,
         )
