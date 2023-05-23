@@ -51,6 +51,7 @@ class EventSchemaBase(BaseModel):
     date: date
     start_time: time
     end_time: time
+    scan_time: int = Field(..., ge=1, le=12)
     organizer: str = Field(..., min_length=3)
     agenda: List[AgendaSchema]
     vacants: int = Field(..., ge=1)
@@ -71,6 +72,7 @@ class EventUpdateSchema(BaseModel):
     date: Optional[date]
     start_time: Optional[time]
     end_time: Optional[time]
+    scan_time: Optional[int] = Field(..., ge=1, le=12)
     agenda: Optional[List[AgendaSchema]]
     vacants: Optional[int] = Field(..., ge=1)
     FAQ: Optional[List[FaqSchema]]
@@ -127,6 +129,7 @@ class EventSchema(EventSchemaBase):
             date=event.date,
             start_time=event.start_time,
             end_time=event.end_time,
+            scan_time=event.scan_time,
             organizer=event.organizer,
             agenda=agenda,
             vacants=event.vacants,

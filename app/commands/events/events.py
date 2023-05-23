@@ -77,6 +77,7 @@ class CreateEventCommand:
             organizer=self.event_data.organizer,
             start_time=self.event_data.start_time,
             end_time=self.event_data.end_time,
+            scan_time=self.event_data.scan_time,
             agenda=agenda,
             vacants=self.event_data.vacants,
             vacants_left=self.event_data.vacants,
@@ -256,6 +257,9 @@ class UpdateEventCommand:
             if self.update.start_time
             else event.start_time,
             end_time=self.update.end_time if self.update.end_time else event.end_time,
+            scan_time=self.update.scan_time
+            if self.update.scan_time
+            else event.scan_time,
             agenda=agenda if self.update.agenda else event.agenda,
             vacants=self.update.vacants if self.update.vacants else event.vacants,
             vacants_left=(self.update.vacants - (event.vacants - event.vacants_left))

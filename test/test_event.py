@@ -45,6 +45,7 @@ def create_event_body(fields={}):
         'date': '2023-03-29',
         'start_time': '09:00:00',
         'end_time': '12:00:00',
+        'scan_time': 5,
         'organizer': 'anOwner',
         'agenda': [
             {
@@ -160,6 +161,7 @@ def test_event_create_with_wrong_body():
         'organizer': [None, ''],
         'start_time': [None, '', 'a', '25:00:00'],
         'end_time': [None, '', 'a', '25:00:00'],
+        'scan_time': [None, '', 'a', 0, 13],
         'agenda': [
             None,
             [
@@ -781,6 +783,7 @@ def create_updated_body(fields):
         'date': '2023-03-29',
         'start_time': '10:00:00',
         'end_time': '13:00:00',
+        'scan_time': 4,
         'agenda': [
             {
                 'time_init': '10:00',
@@ -915,6 +918,7 @@ def test_update_invalid(monkeypatch):
         'date': ['', 'a', '-03-29', '2023-03-29T16:00:00'],
         'start_time': ['', 'a', '25:00:00'],
         'end_time': ['', 'a', '25:00:00'],
+        'scan_time': ['', 'a', 0, 13],
         'agenda': [
             [
                 {
@@ -1549,3 +1553,11 @@ def test_search_event_by_organizer_4_days_ago(monkeypatch):
     assert len(data) == 1
     assert all(map(lambda e: e['name'] in data_names, [event3]))
     assert not any(map(lambda e: e['name'] in data_names, [event2, event1, event4]))
+
+
+def test_create_event_scan_time():
+    body = create_event({"scan_time": 10})
+    response = client.post(URI, json=body)
+    response_data = response.json()
+    assert response.status_code == 201
+    assert response_data['scan_time'] == 10

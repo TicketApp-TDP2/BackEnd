@@ -66,6 +66,7 @@ def create_event(fields={}):
         'date': '2023-03-29',
         'start_time': '09:00:00',
         'end_time': '12:00:00',
+        'scan_time': 10,
         'organizer': 'anOwner',
         'agenda': [
             {
