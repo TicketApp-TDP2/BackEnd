@@ -144,9 +144,16 @@ class SearchEventsCommand:
     def execute(self) -> List[EventSchema]:
         events = self.event_repository.search_events(self.search)
         events_with_finished = self.check_finished(events)
-        events_ordered = sorted(
-            events_with_finished, key=lambda h: (h.vacants), reverse=False
-        )
+        if not self.search.organizer:
+            events_ordered = sorted(
+                events_with_finished, key=lambda h: (h.vacants), reverse=False
+            )
+        else:
+            events_ordered = sorted(
+                events_with_finished,
+                key=lambda h: (h.date, h.start_time),
+                reverse=False,
+            )
         return list(map(EventSchema.from_model, events_ordered))
 
     def check_finished(self, events: List[Event]) -> List[Event]:

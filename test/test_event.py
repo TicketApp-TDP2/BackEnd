@@ -1561,3 +1561,79 @@ def test_create_event_scan_time():
     response_data = response.json()
     assert response.status_code == 201
     assert response_data['scan_time'] == 10
+
+
+def test_search_event_by_organizer_is_ordered_by_hour(monkeypatch):
+    mock_date(monkeypatch, {"year": 2021, "month": 2, "day": 10, "hour": 15})
+    event1 = create_event(
+        {
+            "name": "event 1",
+            "organizer": "omar",
+            "date": "2021-02-12",
+            "start_time": "10:00",
+            "end_time": "14:00",
+            "agenda": [
+                {
+                    "time_init": "10:00",
+                    "time_end": "14:00",
+                    "owner": "Pepe Cibrian",
+                    "title": "Noche de teatro en Bs As",
+                    "description": "Una noche de teatro unica",
+                }
+            ],
+        }
+    )
+    event2 = create_event({"name": "event 2", "organizer": "juan"})
+    event3 = create_event(
+        {
+            "name": "event 3",
+            "organizer": "omar",
+            "date": "2021-02-12",
+            "start_time": "09:00",
+            "end_time": "14:00",
+            "agenda": [
+                {
+                    "time_init": "09:00",
+                    "time_end": "14:00",
+                    "owner": "Pepe Cibrian",
+                    "title": "Noche de teatro en Bs As",
+                    "description": "Una noche de teatro unica",
+                }
+            ],
+        }
+    )
+    event4 = create_event({"name": "event 4", "organizer": "gabriel"})
+
+    response = client.get(f"{URI}?organizer=omar")
+    data = response.json()
+
+    data_names = map(lambda e: e['name'], data)
+
+    assert len(data) == 2
+    assert all(map(lambda e: e['name'] in data_names, [event3, event1]))
+    assert not any(map(lambda e: e['name'] in data_names, [event2, event4]))
+
+
+def test_search_event_by_organizer_is_ordered_by_date(monkeypatch):
+    mock_date(monkeypatch, {"year": 2021, "month": 2, "day": 10, "hour": 15})
+    event1 = create_event(
+        {"name": "event 1", "organizer": "omar", "date": "2021-02-12"}
+    )
+    event2 = create_event({"name": "event 2", "organizer": "juan"})
+    event3 = create_event(
+        {
+            "name": "event 3",
+            "organizer": "omar",
+            "date": "2021-02-11",
+        }
+    )
+    event4 = create_event({"name": "event 4", "organizer": "gabriel"})
+
+    response = client.get(f"{URI}?organizer=omar")
+    data = response.json()
+
+    data_names = map(lambda e: e['name'], data)
+
+    assert len(data) == 2
+    assert all(map(lambda e: e['name'] in data_names, [event3, event1]))
+    assert not any(map(lambda e: e['name'] in data_names, [event2, event4]))
