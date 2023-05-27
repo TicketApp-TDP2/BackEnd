@@ -35,3 +35,9 @@ class EventFinishedError(BusinessError):
     def __init__(self):
         msg = "event_already_finished"
         super().__init__(msg)
+
+
+class ComplaintAlreadyExistsError(BusinessError):
+    def __init__(self):
+        msg = "complaint_already_exists"
+        super().__init__(msg)

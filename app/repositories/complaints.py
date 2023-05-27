@@ -42,6 +42,10 @@ class ComplaintRepository(ABC):
         pass
 
     @abstractmethod
+    def complaint_exists(self, event_id: str, complainer_id: str) -> bool:
+        pass
+
+    @abstractmethod
     def get_complaints_ranking_by_organizer(
         self, filter: Filter
     ) -> list[ComplaintOrganizerRanking]:
@@ -63,6 +67,12 @@ class PersistentComplaintRepository(ComplaintRepository):
         data = self.__serialize_complaint(complaint)
         self.complaints.insert_one(data)
         return complaint
+
+    def complaint_exists(self, event_id: str, complainer_id: str) -> bool:
+        complaint = self.complaints.find_one(
+            {'event_id': event_id, "complainer_id": complainer_id}
+        )
+        return complaint is not None
 
     def get_complaints_by_organizer(
         self, organizer_id: str, filter: Filter
