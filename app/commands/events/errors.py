@@ -89,3 +89,9 @@ class EventTimeError(BusinessError):
     def __init__(self):
         msg = "end_time_must_be_greater_than_start_time"
         super().__init__(msg)
+
+
+class AgendaDoesNotEndError(BusinessError):
+    def __init__(self):
+        msg = "agenda_can_not_end_before_event_ends"
+        super().__init__(msg)

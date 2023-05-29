@@ -18,6 +18,7 @@ from .errors import (
     EventCannotBeUnSuspendedError,
     CollaboratorNotFoundError,
     EventTimeError,
+    AgendaDoesNotEndError,
 )
 from app.repositories.event import (
     EventRepository,
@@ -111,6 +112,8 @@ class CreateEventCommand:
         for element in agenda:
             if time.fromisoformat(element.time_end) > end_time:
                 raise AgendaTooLargeError
+        if time.fromisoformat(agenda[-1].time_end) != end_time:
+            raise AgendaDoesNotEndError
 
 
 class GetEventCommand:

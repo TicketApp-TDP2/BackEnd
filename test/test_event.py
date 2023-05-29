@@ -669,10 +669,36 @@ def test_search_events_not_finished_with_time(monkeypatch):
         {"name": "event1", "date": "2021-02-02", "end_time": "12:00:00"}
     )
     event2 = create_event(
-        {"name": "event2", "date": "2021-02-02", "end_time": "16:00:00"}
+        {
+            "name": "event2",
+            "date": "2021-02-02",
+            "end_time": "16:00:00",
+            "agenda": [
+                {
+                    'time_init': '09:00',
+                    'time_end': '16:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                }
+            ],
+        }
     )
     event3 = create_event(
-        {"name": "event3", "date": "2021-02-02", "end_time": "18:00:00"}
+        {
+            "name": "event3",
+            "date": "2021-02-02",
+            "end_time": "18:00:00",
+            "agenda": [
+                {
+                    'time_init': '09:00',
+                    'time_end': '18:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                }
+            ],
+        }
     )
 
     response = client.get(f"{URI}?not_finished=True")
@@ -1651,3 +1677,30 @@ def test_create_event_with_end_time_same_than_start_time():
     response = client.post(URI, json=body)
     assert response.status_code == 400
     assert response.json()['detail'] == 'end_time_must_be_greater_than_start_time'
+
+
+def test_create_event_with_agenda_not_ending():
+    body = create_event_body(
+        {
+            "agenda": [
+                {
+                    'time_init': '09:00',
+                    'time_end': '10:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                },
+                {
+                    'time_init': '10:00',
+                    'time_end': '11:00',
+                    'owner': 'Agustin',
+                    'title': 'Noche de teatro en Bs As 2',
+                    'description': 'Una noche de teatro unica 2',
+                },
+            ]
+        }
+    )
+    response = client.post(URI, json=body)
+    data = response.json()
+    assert response.status_code == 400
+    assert data['detail'] == 'agenda_can_not_end_before_event_ends'
