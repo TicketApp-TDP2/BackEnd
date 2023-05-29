@@ -85,6 +85,7 @@ class Event:
         date: date,
         start_time: time,
         end_time: time,
+        scan_time: int,
         organizer: str,
         agenda: list[Agenda],
         vacants: int,
@@ -104,6 +105,7 @@ class Event:
         self.date = date
         self.start_time = start_time
         self.end_time = end_time
+        self.scan_time = scan_time
         self.organizer = organizer
         self.agenda = agenda
         self.vacants = vacants
@@ -126,6 +128,7 @@ class Event:
         date: date,
         start_time: time,
         end_time: time,
+        scan_time: int,
         organizer: str,
         agenda: list[Agenda],
         vacants: int,
@@ -143,6 +146,7 @@ class Event:
             date=date,
             start_time=start_time,
             end_time=end_time,
+            scan_time=scan_time,
             organizer=organizer,
             agenda=agenda,
             vacants=vacants,

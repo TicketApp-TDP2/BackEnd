@@ -77,6 +77,7 @@ class CreateEventCommand:
             organizer=self.event_data.organizer,
             start_time=self.event_data.start_time,
             end_time=self.event_data.end_time,
+            scan_time=self.event_data.scan_time,
             agenda=agenda,
             vacants=self.event_data.vacants,
             vacants_left=self.event_data.vacants,
@@ -143,9 +144,16 @@ class SearchEventsCommand:
     def execute(self) -> List[EventSchema]:
         events = self.event_repository.search_events(self.search)
         events_with_finished = self.check_finished(events)
-        events_ordered = sorted(
-            events_with_finished, key=lambda h: (h.vacants), reverse=False
-        )
+        if not self.search.organizer:
+            events_ordered = sorted(
+                events_with_finished, key=lambda h: (h.vacants), reverse=False
+            )
+        else:
+            events_ordered = sorted(
+                events_with_finished,
+                key=lambda h: (h.date, h.start_time),
+                reverse=False,
+            )
         return list(map(EventSchema.from_model, events_ordered))
 
     def check_finished(self, events: List[Event]) -> List[Event]:
@@ -256,6 +264,9 @@ class UpdateEventCommand:
             if self.update.start_time
             else event.start_time,
             end_time=self.update.end_time if self.update.end_time else event.end_time,
+            scan_time=self.update.scan_time
+            if self.update.scan_time
+            else event.scan_time,
             agenda=agenda if self.update.agenda else event.agenda,
             vacants=self.update.vacants if self.update.vacants else event.vacants,
             vacants_left=(self.update.vacants - (event.vacants - event.vacants_left))

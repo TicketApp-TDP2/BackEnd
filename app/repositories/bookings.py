@@ -1,7 +1,9 @@
 from app.repositories.config import db
 from abc import ABC, abstractmethod
 from app.models.booking import Booking
+from app.schemas.stats import EventBookingsByHourStat
 from app.repositories.errors import BookingNotFoundError
+from app.utils.now import getNow
 
 
 class BookingRepository(ABC):
@@ -29,6 +31,14 @@ class BookingRepository(ABC):
     def get_bookings_by_event(self, event_id: str) -> list[Booking]:
         pass
 
+    @abstractmethod
+    def get_bookings_by_event_verified(self, event_id: str) -> list[Booking]:
+        pass
+
+    @abstractmethod
+    def get_bookings_by_hour(self, event_id: str) -> list[Booking]:
+        pass
+
 
 class PersistentBookingRepository(BookingRepository):
     def __init__(self):
@@ -54,6 +64,20 @@ class PersistentBookingRepository(BookingRepository):
         bookings = self.bookings.find({'event_id': event_id})
         return [self.__deserialize_booking(booking) for booking in bookings]
 
+    def get_bookings_by_event_verified(self, event_id: str) -> list[Booking]:
+        bookings = self.bookings.find({'event_id': event_id, 'verified': True})
+        return [self.__deserialize_booking(booking) for booking in bookings]
+
+    def get_bookings_by_hour(self, event_id: str) -> list[Booking]:
+        pipeline = [
+            {'$match': {'event_id': event_id}},
+            {'$match': {'verified': True}},
+            {'$project': {'verified_time': {'$substr': ['$verified_time', 0, 13]}}},
+            {'$group': {'_id': '$verified_time', 'count': {'$sum': 1}}},
+        ]
+        stats = self.bookings.aggregate(pipeline)
+        return [self.__deserialize_stat(stat) for stat in stats]
+
     def get_booking(self, booking_id: str) -> Booking:
         booking = self.bookings.find_one({'_id': booking_id})
         if booking is None:
@@ -63,6 +87,8 @@ class PersistentBookingRepository(BookingRepository):
     def verify_booking(self, booking_id: str) -> Booking:
         booking = self.get_booking(booking_id)
         booking.verified = True
+        now = getNow()
+        booking.verified_time = now.strftime('%Y-%m-%d %H:%M')
         data = self.__serialize_booking(booking)
         self.bookings.update_one({'_id': booking_id}, {'$set': data})
         return booking
@@ -73,6 +99,7 @@ class PersistentBookingRepository(BookingRepository):
             "event_id": booking.event_id,
             "reserver_id": booking.reserver_id,
             "verified": booking.verified,
+            "verified_time": booking.verified_time,
         }
 
         return serialized
@@ -83,4 +110,11 @@ class PersistentBookingRepository(BookingRepository):
             event_id=data['event_id'],
             reserver_id=data['reserver_id'],
             verified=data['verified'],
+            verified_time=data['verified_time'],
+        )
+
+    def __deserialize_stat(self, data: dict) -> EventBookingsByHourStat:
+        return EventBookingsByHourStat(
+            time=data['_id'],
+            bookings=data['count'],
         )

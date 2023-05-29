@@ -17,6 +17,7 @@ from app.config.logger import setup_logger
 import uuid
 from typing import List
 from app.schemas.event import State
+from app.schemas.stats import EventBookingsByHourStatSchema
 from app.utils.now import getNow
 
 logger = setup_logger(__name__)
@@ -39,6 +40,7 @@ class CreateBookingCommand:
             reserver_id=self.booking_data.reserver_id,
             id=str(uuid.uuid4()),
             verified=False,
+            verified_time="Not_verified",
         )
         already_exists = self.booking_repository.booking_exists(
             booking.event_id, booking.reserver_id
@@ -124,3 +126,25 @@ class GetBookingsByEventCommand:
     def execute(self) -> List[BookingSchema]:
         bookings = self.booking_repository.get_bookings_by_event(self.event_id)
         return [BookingSchema.from_model(booking) for booking in bookings]
+
+
+class GetBookingsByEventVerifiedCommand:
+    def __init__(self, booking_repository: BookingRepository, event_id: str):
+        self.booking_repository = booking_repository
+        self.event_id = event_id
+
+    def execute(self) -> List[BookingSchema]:
+        bookings = self.booking_repository.get_bookings_by_event_verified(self.event_id)
+        sorted_bookings = sorted(bookings, key=lambda x: x.verified_time)
+        return [BookingSchema.from_model(booking) for booking in sorted_bookings]
+
+
+class GetBookingsByHourCommand:
+    def __init__(self, booking_repository: BookingRepository, event_id: str):
+        self.booking_repository = booking_repository
+        self.event_id = event_id
+
+    def execute(self) -> List[EventBookingsByHourStatSchema]:
+        stats = self.booking_repository.get_bookings_by_hour(self.event_id)
+        sorted_stats = sorted(stats, key=lambda x: x.time)
+        return [EventBookingsByHourStatSchema.from_model(stat) for stat in sorted_stats]

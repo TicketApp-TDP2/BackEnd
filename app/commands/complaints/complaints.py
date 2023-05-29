@@ -9,6 +9,7 @@ from app.repositories.complaints import ComplaintRepository, Filter
 from app.repositories.event import EventRepository
 from app.config.logger import setup_logger
 from typing import List
+from app.commands.complaints.errors import ComplaintAlreadyExistsError
 
 logger = setup_logger(__name__)
 
@@ -27,6 +28,11 @@ class CreateComplaintCommand:
     def execute(self) -> ComplaintSchema:
         event = self.event_repository.get_event(self.complaint_data.event_id)
         organizer_id = event.organizer
+        if self.complaint_repository.complaint_exists(
+            self.complaint_data.event_id, self.complaint_data.complainer_id
+        ):
+            raise ComplaintAlreadyExistsError
+
         complaint = Complaint.new(
             event_id=self.complaint_data.event_id,
             complainer_id=self.complaint_data.complainer_id,

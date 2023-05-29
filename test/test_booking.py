@@ -66,6 +66,7 @@ def create_event(fields={}):
         'date': '2023-03-29',
         'start_time': '09:00:00',
         'end_time': '12:00:00',
+        'scan_time': 10,
         'organizer': 'anOwner',
         'agenda': [
             {
@@ -121,6 +122,7 @@ def test_booking_create_succesfully(monkeypatch):
     assert 'id' in response_data
     booking_body["id"] = response_data["id"]
     booking_body["verified"] = False
+    booking_body["verified_time"] = "Not_verified"
     assert response_data == booking_body
 
 
@@ -200,12 +202,14 @@ def test_booking_create_with_2_reservers(monkeypatch):
     assert 'id' in response_data1
     booking_body1["id"] = response_data1["id"]
     booking_body1["verified"] = False
+    booking_body1["verified_time"] = "Not_verified"
     assert response_data1 == booking_body1
 
     assert response2.status_code == 201
     assert 'id' in response_data2
     booking_body2["id"] = response_data2["id"]
     booking_body2["verified"] = False
+    booking_body2["verified_time"] = "Not_verified"
     assert response_data2 == booking_body2
 
 
@@ -236,6 +240,7 @@ def test_booking_get_by_reserver_one(monkeypatch):
     assert len(data) == 1
     booking_body["id"] = data[0]["id"]
     booking_body["verified"] = False
+    booking_body["verified_time"] = "Not_verified"
     assert data[0] == booking_body
 
 
@@ -263,8 +268,10 @@ def test_booking_get_by_reserver_two(monkeypatch):
     assert len(data) == 2
     booking_body1["id"] = data[0]["id"]
     booking_body1["verified"] = False
+    booking_body1["verified_time"] = "Not_verified"
     booking_body2["id"] = data[1]["id"]
     booking_body2["verified"] = False
+    booking_body2["verified_time"] = "Not_verified"
     assert data[0] == booking_body1
     assert data[1] == booking_body2
 
@@ -619,4 +626,232 @@ def test_bookings_after_4_days(monkeypatch):
     assert len(data) == 1
     booking_body3["id"] = data[0]["id"]
     booking_body3["verified"] = False
+    booking_body3["verified_time"] = "Not_verified"
     assert data[0] == booking_body3
+
+
+def test_verify_booking_has_date(monkeypatch):
+    mock_date(monkeypatch, {'year': 2021, 'month': 1, 'day': 5, 'hour': 15, "min": 20})
+
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
+    event = create_event({'owner': organizer['id']})
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
+
+    event_id = event['id']
+    booking_body = {"event_id": event_id, "reserver_id": reserver['id']}
+    response = client.post(URI, json=booking_body)
+    data = response.json()
+    booking_id = data['id']
+
+    body = {"event_id": event_id}
+    response = client.put(URI + f'/{booking_id}/verify', json=body)
+    response_data = response.json()
+    assert response.status_code == 200
+    assert response_data['verified'] is True
+    assert response_data['verified_time'] == "2021-01-05 15:20"
+
+
+def test_get_verified_bookings(monkeypatch):
+    mock_date(monkeypatch, {'year': 2021, 'month': 1, 'day': 5, 'hour': 15, "min": 20})
+
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
+    reserver2 = create_user({'email': 'reserver2@mail.com', 'id': '2342'})
+    reserver3 = create_user({'email': 'reserver3@mail.com', 'id': '2332'})
+    event = create_event({'owner': organizer['id']})
+    event2 = create_event({'owner': organizer['id']})
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
+    client.put(f"{EVENTS_URI}/{event2['id']}/publish")
+
+    event_id = event['id']
+    booking_body = {"event_id": event_id, "reserver_id": reserver['id']}
+    booking_body2 = {"event_id": event_id, "reserver_id": reserver2['id']}
+    booking_body3 = {"event_id": event_id, "reserver_id": reserver3['id']}
+    booking_body4 = {"event_id": event2['id'], "reserver_id": reserver3['id']}
+    response = client.post(URI, json=booking_body)
+    data = response.json()
+    booking1_id = data['id']
+    response = client.post(URI, json=booking_body2)
+    data = response.json()
+    booking2_id = data['id']
+    client.post(URI, json=booking_body3)
+    response = client.post(URI, json=booking_body4)
+    data = response.json()
+    booking4_id = data['id']
+
+    body = {"event_id": event_id}
+    client.put(URI + f'/{booking1_id}/verify', json=body)
+    mock_date(monkeypatch, {'year': 2021, 'month': 1, 'day': 5, 'hour': 14, "min": 15})
+    client.put(URI + f'/{booking2_id}/verify', json=body)
+    client.put(URI + f'/{booking4_id}/verify', json=body)
+
+    response = client.get(URI + f'/event/{event_id}/verified')
+    data = response.json()
+    assert response.status_code == 200
+    assert len(data) == 2
+    assert data[0]["id"] == booking2_id
+    assert data[1]["id"] == booking1_id
+
+
+def test_booking_by_hour(monkeypatch):
+    mock_date(monkeypatch, {'year': 2021, 'month': 1, 'day': 5, 'hour': 15, "min": 20})
+
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
+    reserver2 = create_user({'email': 'reserver2@mail.com', 'id': '2342'})
+    reserver3 = create_user({'email': 'reserver3@mail.com', 'id': '2332'})
+    event = create_event({'owner': organizer['id']})
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
+
+    event_id = event['id']
+    booking_body = {"event_id": event_id, "reserver_id": reserver['id']}
+    booking_body2 = {"event_id": event_id, "reserver_id": reserver2['id']}
+    booking_body3 = {"event_id": event_id, "reserver_id": reserver3['id']}
+    response = client.post(URI, json=booking_body)
+    data = response.json()
+    booking1_id = data['id']
+    response = client.post(URI, json=booking_body2)
+    data = response.json()
+    booking2_id = data['id']
+    response = client.post(URI, json=booking_body3)
+    data = response.json()
+    booking3_id = data['id']
+
+    body = {"event_id": event_id}
+    client.put(URI + f'/{booking1_id}/verify', json=body)
+    client.put(URI + f'/{booking2_id}/verify', json=body)
+    mock_date(monkeypatch, {'year': 2021, 'month': 1, 'day': 5, 'hour': 16, "min": 15})
+    client.put(URI + f'/{booking3_id}/verify', json=body)
+
+    response = client.get(URI + f'/event/{event_id}/by_hour')
+    data = response.json()
+    assert response.status_code == 200
+    assert len(data) == 2
+    assert data[0] == {"time": "2021-01-05 15", "bookings": 2}
+    assert data[1] == {"time": "2021-01-05 16", "bookings": 1}
+
+
+def test_booking_by_hour_empty(monkeypatch):
+    mock_date(monkeypatch, {'year': 2021, 'month': 1, 'day': 5, 'hour': 15, "min": 20})
+
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    event = create_event({'owner': organizer['id']})
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
+
+    event_id = event['id']
+    response = client.get(URI + f'/event/{event_id}/by_hour')
+    data = response.json()
+    assert response.status_code == 200
+    assert len(data) == 0
+
+
+def test_booking_by_hour_different_days(monkeypatch):
+    mock_date(monkeypatch, {'year': 2021, 'month': 1, 'day': 5, 'hour': 15, "min": 20})
+
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
+    reserver2 = create_user({'email': 'reserver2@mail.com', 'id': '2342'})
+    reserver3 = create_user({'email': 'reserver3@mail.com', 'id': '2332'})
+    event = create_event({'owner': organizer['id']})
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
+
+    event_id = event['id']
+    booking_body = {"event_id": event_id, "reserver_id": reserver['id']}
+    booking_body2 = {"event_id": event_id, "reserver_id": reserver2['id']}
+    booking_body3 = {"event_id": event_id, "reserver_id": reserver3['id']}
+    response = client.post(URI, json=booking_body)
+    data = response.json()
+    booking1_id = data['id']
+    response = client.post(URI, json=booking_body2)
+    data = response.json()
+    booking2_id = data['id']
+    response = client.post(URI, json=booking_body3)
+    data = response.json()
+    booking3_id = data['id']
+
+    body = {"event_id": event_id}
+    client.put(URI + f'/{booking1_id}/verify', json=body)
+    client.put(URI + f'/{booking2_id}/verify', json=body)
+    mock_date(monkeypatch, {'year': 2021, 'month': 1, 'day': 6, 'hour': 14, "min": 15})
+    client.put(URI + f'/{booking3_id}/verify', json=body)
+
+    response = client.get(URI + f'/event/{event_id}/by_hour')
+    data = response.json()
+    assert response.status_code == 200
+    assert len(data) == 2
+    assert data[0] == {"time": "2021-01-05 15", "bookings": 2}
+    assert data[1] == {"time": "2021-01-06 14", "bookings": 1}
+
+
+def test_booking_by_hour_multiple_bookings(monkeypatch):
+    mock_date(monkeypatch, {'year': 2021, 'month': 1, 'day': 5, 'hour': 15, "min": 20})
+
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    reserver = create_user({'email': 'reserver@mail.com', 'id': '234'})
+    reserver2 = create_user({'email': 'reserver2@mail.com', 'id': '2342'})
+    reserver3 = create_user({'email': 'reserver3@mail.com', 'id': '2332'})
+    reserver4 = create_user({'email': 'reserver4@mail.com', 'id': '23321'})
+    reserver5 = create_user({'email': 'reserver5@mail.com', 'id': '23322'})
+    reserver6 = create_user({'email': 'reserver6@mail.com', 'id': '23323'})
+    reserver7 = create_user({'email': 'reserver7@mail.com', 'id': '23324'})
+    reserver8 = create_user({'email': 'reserver8@mail.com', 'id': '23325'})
+    event = create_event({'owner': organizer['id'], 'vacants': 10})
+    client.put(f"{EVENTS_URI}/{event['id']}/publish")
+
+    event_id = event['id']
+    booking_body = {"event_id": event_id, "reserver_id": reserver['id']}
+    booking_body2 = {"event_id": event_id, "reserver_id": reserver2['id']}
+    booking_body3 = {"event_id": event_id, "reserver_id": reserver3['id']}
+    booking_body4 = {"event_id": event_id, "reserver_id": reserver4['id']}
+    booking_body5 = {"event_id": event_id, "reserver_id": reserver5['id']}
+    booking_body6 = {"event_id": event_id, "reserver_id": reserver6['id']}
+    booking_body7 = {"event_id": event_id, "reserver_id": reserver7['id']}
+    booking_body8 = {"event_id": event_id, "reserver_id": reserver8['id']}
+
+    response = client.post(URI, json=booking_body)
+    data = response.json()
+    booking1_id = data['id']
+    response = client.post(URI, json=booking_body2)
+    data = response.json()
+    booking2_id = data['id']
+    response = client.post(URI, json=booking_body3)
+    data = response.json()
+    booking3_id = data['id']
+    response = client.post(URI, json=booking_body4)
+    data = response.json()
+    booking4_id = data['id']
+    response = client.post(URI, json=booking_body5)
+    data = response.json()
+    booking5_id = data['id']
+    response = client.post(URI, json=booking_body6)
+    data = response.json()
+    booking6_id = data['id']
+    response = client.post(URI, json=booking_body7)
+    data = response.json()
+    booking7_id = data['id']
+    response = client.post(URI, json=booking_body8)
+    data = response.json()
+    booking8_id = data['id']
+
+    body = {"event_id": event_id}
+    client.put(URI + f'/{booking1_id}/verify', json=body)
+    client.put(URI + f'/{booking2_id}/verify', json=body)
+    mock_date(monkeypatch, {'year': 2021, 'month': 1, 'day': 6, 'hour': 14, "min": 15})
+    client.put(URI + f'/{booking3_id}/verify', json=body)
+    mock_date(monkeypatch, {'year': 2021, 'month': 1, 'day': 6, 'hour': 17, "min": 35})
+    client.put(URI + f'/{booking4_id}/verify', json=body)
+    client.put(URI + f'/{booking6_id}/verify', json=body)
+    mock_date(monkeypatch, {'year': 2021, 'month': 1, 'day': 6, 'hour': 19, "min": 25})
+    client.put(URI + f'/{booking5_id}/verify', json=body)
+    client.put(URI + f'/{booking7_id}/verify', json=body)
+    client.put(URI + f'/{booking8_id}/verify', json=body)
+
+    response = client.get(URI + f'/event/{event_id}/by_hour')
+    data = response.json()
+    assert response.status_code == 200
+    assert len(data) == 4
+    assert data[0] == {"time": "2021-01-05 15", "bookings": 2}
+    assert data[1] == {"time": "2021-01-06 14", "bookings": 1}
+    assert data[2] == {"time": "2021-01-06 17", "bookings": 2}
+    assert data[3] == {"time": "2021-01-06 19", "bookings": 3}

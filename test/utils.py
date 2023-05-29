@@ -21,6 +21,13 @@ def mock_date(monkeypatch, date):
     class MyDatetime(datetime.datetime):
         @classmethod
         def now(cls, tz=None):
-            return cls(date["year"], date["month"], date["day"], date["hour"])
+            min = date["min"] if "min" in date else 0
+            return cls(
+                date["year"],
+                date["month"],
+                date["day"],
+                date["hour"],
+                min,
+            )
 
     monkeypatch.setattr(datetime, 'datetime', MyDatetime)
