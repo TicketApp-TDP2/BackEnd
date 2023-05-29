@@ -17,6 +17,7 @@ from .errors import (
     EventCannotBeSuspendedError,
     EventCannotBeUnSuspendedError,
     CollaboratorNotFoundError,
+    EventTimeError,
 )
 from app.repositories.event import (
     EventRepository,
@@ -83,6 +84,8 @@ class CreateEventCommand:
             vacants_left=self.event_data.vacants,
             FAQ=faq,
         )
+        if event.start_time >= event.end_time:
+            raise EventTimeError
         self.verify_agenda(agenda, event.end_time)
         already_exists = self.event_repository.event_exists(event.id)
         if already_exists:

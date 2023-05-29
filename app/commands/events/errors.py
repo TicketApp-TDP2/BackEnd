@@ -83,3 +83,9 @@ class CollaboratorNotFoundError(BusinessError):
     def __init__(self):
         msg = "collaborator_not_found"
         super().__init__(msg)
+
+
+class EventTimeError(BusinessError):
+    def __init__(self):
+        msg = "end_time_must_be_greater_than_start_time"
+        super().__init__(msg)

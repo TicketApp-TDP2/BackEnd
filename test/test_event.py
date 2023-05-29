@@ -1637,3 +1637,17 @@ def test_search_event_by_organizer_is_ordered_by_date(monkeypatch):
     assert len(data) == 2
     assert all(map(lambda e: e['name'] in data_names, [event3, event1]))
     assert not any(map(lambda e: e['name'] in data_names, [event2, event4]))
+
+
+def test_create_event_with_end_time_less_than_start_time():
+    body = create_event_body({"start_time": "14:00:00", "end_time": "10:00:00"})
+    response = client.post(URI, json=body)
+    assert response.status_code == 400
+    assert response.json()['detail'] == 'end_time_must_be_greater_than_start_time'
+
+
+def test_create_event_with_end_time_same_than_start_time():
+    body = create_event_body({"start_time": "14:00:00", "end_time": "14:00:00"})
+    response = client.post(URI, json=body)
+    assert response.status_code == 400
+    assert response.json()['detail'] == 'end_time_must_be_greater_than_start_time'
