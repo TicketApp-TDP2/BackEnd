@@ -19,6 +19,7 @@ from .errors import (
     CollaboratorNotFoundError,
     EventTimeError,
     AgendaDoesNotEndError,
+    TimeCanNotBeUpdatedWithoutAgendaError,
 )
 from app.repositories.event import (
     EventRepository,
@@ -217,6 +218,10 @@ class UpdateEventCommand:
         self.id = id
 
     def execute(self) -> EventSchema:
+        if self.update.start_time and not self.update.agenda:
+            raise TimeCanNotBeUpdatedWithoutAgendaError
+        if self.update.end_time and not self.update.agenda:
+            raise TimeCanNotBeUpdatedWithoutAgendaError
         event = self.event_repository.get_event(self.id)
         if event.state != State.Borrador and event.state != State.Publicado:
             raise EventCannotBeUpdatedError
@@ -283,6 +288,9 @@ class UpdateEventCommand:
             verified_vacants=event.verified_vacants,
             collaborators=event.collaborators,
         )
+
+        if event.start_time >= event.end_time:
+            raise EventTimeError
         event = self.event_repository.update_event(event)
 
         return EventSchema.from_model(event)
