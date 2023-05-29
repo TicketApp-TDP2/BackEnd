@@ -83,3 +83,21 @@ class CollaboratorNotFoundError(BusinessError):
     def __init__(self):
         msg = "collaborator_not_found"
         super().__init__(msg)
+
+
+class EventTimeError(BusinessError):
+    def __init__(self):
+        msg = "end_time_must_be_greater_than_start_time"
+        super().__init__(msg)
+
+
+class AgendaDoesNotEndError(BusinessError):
+    def __init__(self):
+        msg = "agenda_can_not_end_before_event_ends"
+        super().__init__(msg)
+
+
+class TimeCanNotBeUpdatedWithoutAgendaError(BusinessError):
+    def __init__(self):
+        msg = "time_can_not_be_updated_without_agenda"
+        super().__init__(msg)

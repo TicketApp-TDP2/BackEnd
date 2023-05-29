@@ -17,6 +17,9 @@ from .errors import (
     EventCannotBeSuspendedError,
     EventCannotBeUnSuspendedError,
     CollaboratorNotFoundError,
+    EventTimeError,
+    AgendaDoesNotEndError,
+    TimeCanNotBeUpdatedWithoutAgendaError,
 )
 from app.repositories.event import (
     EventRepository,
@@ -83,7 +86,9 @@ class CreateEventCommand:
             vacants_left=self.event_data.vacants,
             FAQ=faq,
         )
-        self.verify_agenda(agenda, event.end_time)
+        if event.start_time >= event.end_time:
+            raise EventTimeError
+        verify_agenda(agenda, event.end_time)
         already_exists = self.event_repository.event_exists(event.id)
         if already_exists:
             raise EventAlreadyExistsError
@@ -92,22 +97,6 @@ class CreateEventCommand:
         event = self.event_repository.add_event(event)
 
         return EventSchema.from_model(event)
-
-    def verify_agenda(self, agenda: List[Agenda], end_time: str):
-        if len(agenda) == 0:
-            raise AgendaEmptyError
-        for i in range(1, len(agenda)):
-            if time.fromisoformat(agenda[i - 1].time_end) < time.fromisoformat(
-                agenda[i].time_init
-            ):
-                raise AgendaEmptySpaceError
-            if time.fromisoformat(agenda[i - 1].time_end) > time.fromisoformat(
-                agenda[i].time_init
-            ):
-                raise AgendaOverlapError
-        for element in agenda:
-            if time.fromisoformat(element.time_end) > end_time:
-                raise AgendaTooLargeError
 
 
 class GetEventCommand:
@@ -211,6 +200,10 @@ class UpdateEventCommand:
         self.id = id
 
     def execute(self) -> EventSchema:
+        if self.update.start_time and not self.update.agenda:
+            raise TimeCanNotBeUpdatedWithoutAgendaError
+        if self.update.end_time and not self.update.agenda:
+            raise TimeCanNotBeUpdatedWithoutAgendaError
         event = self.event_repository.get_event(self.id)
         if event.state != State.Borrador and event.state != State.Publicado:
             raise EventCannotBeUpdatedError
@@ -277,6 +270,9 @@ class UpdateEventCommand:
             verified_vacants=event.verified_vacants,
             collaborators=event.collaborators,
         )
+        if event.start_time >= event.end_time:
+            raise EventTimeError
+        verify_agenda(event.agenda, event.end_time)
         event = self.event_repository.update_event(event)
 
         return EventSchema.from_model(event)
@@ -383,3 +379,22 @@ class RemoveCollaboratorEventCommand:
 
         event = self.event_repository.update_event(event)
         return EventSchema.from_model(event)
+
+
+def verify_agenda(agenda: List[Agenda], end_time: str):
+    if len(agenda) == 0:
+        raise AgendaEmptyError
+    for i in range(1, len(agenda)):
+        if time.fromisoformat(agenda[i - 1].time_end) < time.fromisoformat(
+            agenda[i].time_init
+        ):
+            raise AgendaEmptySpaceError
+        if time.fromisoformat(agenda[i - 1].time_end) > time.fromisoformat(
+            agenda[i].time_init
+        ):
+            raise AgendaOverlapError
+    for element in agenda:
+        if time.fromisoformat(element.time_end) > end_time:
+            raise AgendaTooLargeError
+    if time.fromisoformat(agenda[-1].time_end) != end_time:
+        raise AgendaDoesNotEndError

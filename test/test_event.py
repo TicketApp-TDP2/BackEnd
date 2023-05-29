@@ -669,10 +669,36 @@ def test_search_events_not_finished_with_time(monkeypatch):
         {"name": "event1", "date": "2021-02-02", "end_time": "12:00:00"}
     )
     event2 = create_event(
-        {"name": "event2", "date": "2021-02-02", "end_time": "16:00:00"}
+        {
+            "name": "event2",
+            "date": "2021-02-02",
+            "end_time": "16:00:00",
+            "agenda": [
+                {
+                    'time_init': '09:00',
+                    'time_end': '16:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                }
+            ],
+        }
     )
     event3 = create_event(
-        {"name": "event3", "date": "2021-02-02", "end_time": "18:00:00"}
+        {
+            "name": "event3",
+            "date": "2021-02-02",
+            "end_time": "18:00:00",
+            "agenda": [
+                {
+                    'time_init': '09:00',
+                    'time_end': '18:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                }
+            ],
+        }
     )
 
     response = client.get(f"{URI}?not_finished=True")
@@ -1637,3 +1663,329 @@ def test_search_event_by_organizer_is_ordered_by_date(monkeypatch):
     assert len(data) == 2
     assert all(map(lambda e: e['name'] in data_names, [event3, event1]))
     assert not any(map(lambda e: e['name'] in data_names, [event2, event4]))
+
+
+def test_create_event_with_end_time_less_than_start_time():
+    body = create_event_body({"start_time": "14:00:00", "end_time": "10:00:00"})
+    response = client.post(URI, json=body)
+    assert response.status_code == 400
+    assert response.json()['detail'] == 'end_time_must_be_greater_than_start_time'
+
+
+def test_create_event_with_end_time_same_than_start_time():
+    body = create_event_body({"start_time": "14:00:00", "end_time": "14:00:00"})
+    response = client.post(URI, json=body)
+    assert response.status_code == 400
+    assert response.json()['detail'] == 'end_time_must_be_greater_than_start_time'
+
+
+def test_create_event_with_agenda_not_ending():
+    body = create_event_body(
+        {
+            "agenda": [
+                {
+                    'time_init': '09:00',
+                    'time_end': '10:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                },
+                {
+                    'time_init': '10:00',
+                    'time_end': '11:00',
+                    'owner': 'Agustin',
+                    'title': 'Noche de teatro en Bs As 2',
+                    'description': 'Una noche de teatro unica 2',
+                },
+            ]
+        }
+    )
+    response = client.post(URI, json=body)
+    data = response.json()
+    assert response.status_code == 400
+    assert data['detail'] == 'agenda_can_not_end_before_event_ends'
+
+
+def update_event_time_error(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+
+    body = create_event_body(
+        {
+            "date": "2024-02-02",
+            "start_time": "10:00",
+            "end_time": "12:00",
+            "agenda": [
+                {
+                    'time_init': '10:00',
+                    'time_end': '12:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                }
+            ],
+        }
+    )
+    event = client.post(URI, json=body).json()
+    id = event['id']
+
+    new_body = create_updated_body(
+        {
+            "start_time": "11:00",
+            "end_time": "10:00",
+            "agenda": [
+                {
+                    'time_init': '11:00',
+                    'time_end': '10:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                }
+            ],
+        }
+    )
+    response = client.put(URI + f"/{id}", json=new_body)
+
+    assert response.status_code == 400
+    assert response.json()['detail'] == 'end_time_must_be_greater_than_start_time'
+
+
+def test_update_event_start_time_but_not_agenda(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+
+    body = create_event_body(
+        {
+            "date": "2024-02-02",
+            "start_time": "10:00",
+            "end_time": "12:00",
+            "agenda": [
+                {
+                    'time_init': '10:00',
+                    'time_end': '12:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                }
+            ],
+        }
+    )
+    event = client.post(URI, json=body).json()
+    id = event['id']
+
+    new_body = create_updated_body({"start_time": "10:00", "agenda": None})
+    response = client.put(URI + f"/{id}", json=new_body)
+
+    assert response.status_code == 400
+    assert response.json()['detail'] == 'time_can_not_be_updated_without_agenda'
+
+
+def test_update_event_end_time_but_not_agenda(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+
+    body = create_event_body(
+        {
+            "date": "2024-02-02",
+            "start_time": "10:00",
+            "end_time": "12:00",
+            "agenda": [
+                {
+                    'time_init': '10:00',
+                    'time_end': '12:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                }
+            ],
+        }
+    )
+    event = client.post(URI, json=body).json()
+    id = event['id']
+
+    new_body = create_updated_body({"end_time": "16:00", "agenda": None})
+    response = client.put(URI + f"/{id}", json=new_body)
+
+    assert response.status_code == 400
+    assert response.json()['detail'] == 'time_can_not_be_updated_without_agenda'
+
+
+def test_update_event_with_empty_space_in_agenda():
+    body = create_event_body(
+        {
+            "date": "2024-02-02",
+            "start_time": "09:00",
+            "end_time": "13:00",
+            "agenda": [
+                {
+                    'time_init': '09:00',
+                    'time_end': '13:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                }
+            ],
+        }
+    )
+    event = client.post(URI, json=body).json()
+    id = event['id']
+
+    new_body = create_updated_body(
+        {
+            "agenda": [
+                {
+                    'time_init': '09:00',
+                    'time_end': '10:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                },
+                {
+                    'time_init': '11:00',
+                    'time_end': '13:00',
+                    'owner': 'Agustin',
+                    'title': 'Noche de teatro en Bs As 2',
+                    'description': 'Una noche de teatro unica 2',
+                },
+            ]
+        }
+    )
+    response = client.put(URI + f"/{id}", json=new_body)
+    data = response.json()
+    assert response.status_code == 400
+    assert data['detail'] == 'agenda_can_not_have_empty_spaces'
+
+
+def test_update_event_with_overlap_in_agenda():
+    body = create_event_body(
+        {
+            "date": "2024-02-02",
+            "start_time": "09:00",
+            "end_time": "13:00",
+            "agenda": [
+                {
+                    'time_init': '09:00',
+                    'time_end': '13:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                }
+            ],
+        }
+    )
+    event = client.post(URI, json=body).json()
+    id = event['id']
+
+    new_body = create_updated_body(
+        {
+            "agenda": [
+                {
+                    'time_init': '09:00',
+                    'time_end': '11:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                },
+                {
+                    'time_init': '10:00',
+                    'time_end': '13:00',
+                    'owner': 'Agustin',
+                    'title': 'Noche de teatro en Bs As 2',
+                    'description': 'Una noche de teatro unica 2',
+                },
+            ]
+        }
+    )
+    response = client.put(URI + f"/{id}", json=new_body)
+    data = response.json()
+    assert response.status_code == 400
+    assert data['detail'] == 'agenda_can_not_have_overlap'
+
+
+def test_update_event_with_agenda_ending_after_event():
+    body = create_event_body(
+        {
+            "date": "2024-02-02",
+            "start_time": "09:00",
+            "end_time": "13:00",
+            "agenda": [
+                {
+                    'time_init': '09:00',
+                    'time_end': '13:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                }
+            ],
+        }
+    )
+    event = client.post(URI, json=body).json()
+    id = event['id']
+
+    new_body = create_updated_body(
+        {
+            "agenda": [
+                {
+                    'time_init': '09:00',
+                    'time_end': '11:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                },
+                {
+                    'time_init': '11:00',
+                    'time_end': '14:00',
+                    'owner': 'Agustin',
+                    'title': 'Noche de teatro en Bs As 2',
+                    'description': 'Una noche de teatro unica 2',
+                },
+            ]
+        }
+    )
+    response = client.put(URI + f"/{id}", json=new_body)
+    data = response.json()
+    assert response.status_code == 400
+    assert data['detail'] == 'agenda_can_not_end_after_event_end'
+
+
+def test_update_event_with_agenda_not_ending():
+    body = create_event_body(
+        {
+            "date": "2024-02-02",
+            "start_time": "09:00",
+            "end_time": "13:00",
+            "agenda": [
+                {
+                    'time_init': '09:00',
+                    'time_end': '13:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                }
+            ],
+        }
+    )
+    event = client.post(URI, json=body).json()
+    id = event['id']
+
+    new_body = create_updated_body(
+        {
+            "agenda": [
+                {
+                    'time_init': '09:00',
+                    'time_end': '10:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                },
+                {
+                    'time_init': '10:00',
+                    'time_end': '11:00',
+                    'owner': 'Agustin',
+                    'title': 'Noche de teatro en Bs As 2',
+                    'description': 'Una noche de teatro unica 2',
+                },
+            ]
+        }
+    )
+    response = client.put(URI + f"/{id}", json=new_body)
+    data = response.json()
+    assert response.status_code == 400
+    assert data['detail'] == 'agenda_can_not_end_before_event_ends'
