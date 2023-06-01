@@ -147,4 +147,102 @@ def test_stat_event_state(monkeypatch):
     }
 
 
-# test alguno con 0
+def test_stat_event_state_with_some_0(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 5, 'day': 6, 'hour': 2})
+    organizer = create_organizer()
+    event_borrador = create_event({"date": "2022-05-10"})
+    event_publicado1 = create_event({"date": "2022-05-10"})
+    event_publicado2 = create_event({"date": "2022-05-10"})
+    event_terminado = create_event(
+        {
+            "date": "2022-05-08",
+            "start_time": "14:00",
+            "end_time": "15:00",
+            'agenda': [
+                {
+                    'time_init': '14:00',
+                    'time_end': '15:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                }
+            ],
+        }
+    )
+    event_terminado2 = create_event({"date": "2022-05-07"})
+    event_suspendido = create_event(
+        {"date": "2022-05-10", "organizer": organizer["id"]}
+    )
+
+    client.put(f'api/events/{event_publicado1["id"]}/publish')
+    client.put(f'api/events/{event_publicado2["id"]}/publish')
+
+    client.put(f'api/events/{event_suspendido["id"]}/publish')
+    client.put(f'api/events/{event_suspendido["id"]}/suspend')
+
+    mock_date(monkeypatch, {'year': 2022, 'month': 5, 'day': 8, 'hour': 16})
+
+    response = client.get(URI + '?start_date=2022-05-05&end_date=2022-05-07')
+    assert response.status_code == 200
+    data = response.json()
+    assert data["event_states"] == {
+        "Borrador": 1,
+        "Publicado": 2,
+        "Cancelado": 0,
+        "Finalizado": 2,
+        "Suspendido": 1,
+    }
+
+
+def test_stat_event_state_diferrent_dates(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 5, 'day': 4, 'hour': 2})
+    organizer = create_organizer()
+    event_borrador = create_event({"date": "2022-05-10"})
+    event_publicado1 = create_event({"date": "2022-05-10"})
+    mock_date(monkeypatch, {'year': 2022, 'month': 5, 'day': 5, 'hour': 2})
+    event_publicado2 = create_event({"date": "2022-05-10"})
+    event_cancelado = create_event({"date": "2022-05-10"})
+    event_terminado = create_event(
+        {
+            "date": "2022-05-08",
+            "start_time": "14:00",
+            "end_time": "15:00",
+            'agenda': [
+                {
+                    'time_init': '14:00',
+                    'time_end': '15:00',
+                    'owner': 'Pepe Cibrian',
+                    'title': 'Noche de teatro en Bs As',
+                    'description': 'Una noche de teatro unica',
+                }
+            ],
+        }
+    )
+    event_terminado2 = create_event({"date": "2022-05-07"})
+    event_suspendido = create_event(
+        {"date": "2022-05-10", "organizer": organizer["id"]}
+    )
+
+    client.put(f'api/events/{event_publicado1["id"]}/publish')
+    client.put(f'api/events/{event_publicado2["id"]}/publish')
+
+    client.put(f'api/events/{event_cancelado["id"]}/cancel')
+
+    client.put(f'api/events/{event_suspendido["id"]}/publish')
+    client.put(f'api/events/{event_suspendido["id"]}/suspend')
+
+    mock_date(monkeypatch, {'year': 2022, 'month': 5, 'day': 8, 'hour': 16})
+
+    response = client.get(URI + '?start_date=2022-05-05&end_date=2022-05-07')
+    assert response.status_code == 200
+    data = response.json()
+    assert data["event_states"] == {
+        "Borrador": 0,
+        "Publicado": 1,
+        "Cancelado": 1,
+        "Finalizado": 2,
+        "Suspendido": 1,
+    }
+
+
+# test fechas distintas
