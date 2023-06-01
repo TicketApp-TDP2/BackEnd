@@ -69,6 +69,7 @@ class CreateEventCommand:
         if len(faq) > 30:
             raise TooManyFaqsError
 
+        today = getNow().date()
         event = Event.new(
             name=self.event_data.name,
             description=self.event_data.description,
@@ -85,6 +86,7 @@ class CreateEventCommand:
             vacants=self.event_data.vacants,
             vacants_left=self.event_data.vacants,
             FAQ=faq,
+            created_at=today,
         )
         if event.start_time >= event.end_time:
             raise EventTimeError
@@ -269,6 +271,7 @@ class UpdateEventCommand:
             state=event.state,
             verified_vacants=event.verified_vacants,
             collaborators=event.collaborators,
+            created_at=event.created_at,
         )
         if event.start_time >= event.end_time:
             raise EventTimeError

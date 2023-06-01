@@ -280,6 +280,7 @@ class PersistentEventRepository(EventRepository):
             'state': event.state.value,
             'verified_vacants': event.verified_vacants,
             'collaborators': serialized_collaborators,
+            'created_at': str(event.created_at),
         }
 
         return serialized
@@ -348,4 +349,5 @@ class PersistentEventRepository(EventRepository):
             state=State(data['state']),
             verified_vacants=data['verified_vacants'],
             collaborators=deserialized_collaborators,
+            created_at=date.fromisoformat(data['created_at']),
         )
