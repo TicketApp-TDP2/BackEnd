@@ -8,6 +8,7 @@ from app.models.event import Type, Event, Location, Agenda, Faq, State, Collabor
 from app.repositories.errors import EventNotFoundError
 from datetime import date, time, timedelta
 from app.utils.now import getNow
+from app.models.stat import EventStatesStat
 
 EARTH_RADIUS_METERS = 6_371_000
 
@@ -78,6 +79,14 @@ class EventRepository(ABC):
 
     @abstractmethod
     def update_event(self, id: str, event: Event) -> Event:
+        pass
+
+    @abstractmethod
+    def get_event_states_stat(self, start_date: str, end_date: str) -> EventStatesStat:
+        pass
+
+    @abstractmethod
+    def update_state_all_events(self):
         pass
 
 
@@ -154,6 +163,61 @@ class PersistentEventRepository(EventRepository):
         data = self.__serialize_event(event)
         self.events.update_one({'_id': event.id}, {'$set': data})
         return event
+
+    def get_event_states_stat(self, start_date: str, end_date: str) -> EventStatesStat:
+        pipeline = [
+            {
+                '$match': {
+                    'created_at': {
+                        '$gte': start_date,
+                        '$lte': end_date,
+                    }
+                }
+            },
+            {
+                '$group': {
+                    '_id': '$state',
+                    'count': {'$sum': 1},
+                }
+            },
+            {
+                '$project': {
+                    'state': '$_id',
+                    'count': '$count',
+                }
+            },
+        ]
+        result = self.events.aggregate(pipeline)
+        result = {doc['state']: doc['count'] for doc in result}
+        return EventStatesStat(
+            Borrador=result.get(State.Borrador.value, 0),
+            Publicado=result.get(State.Publicado.value, 0),
+            Cancelado=result.get(State.Cancelado.value, 0),
+            Finalizado=result.get(State.Finalizado.value, 0),
+            Suspendido=result.get(State.Suspendido.value, 0),
+        )
+
+    def update_state_all_events(self):
+        now = getNow()
+        filter_pipeline = {
+            '$or': [
+                {'date': {'$lt': now.date().isoformat()}},
+                {
+                    '$and': [
+                        {'date': {'$eq': now.date().isoformat()}},
+                        {'end_time': {'$lt': now.time().isoformat()}},
+                    ]
+                },
+            ]
+        }
+
+        update_pipeline = {
+            '$set': {
+                'state': State.Finalizado.value,
+            }
+        }
+
+        self.events.update_many(filter=filter_pipeline, update=update_pipeline)
 
     def __serialize_search(self, search: Search) -> dict:
         srch = {
