@@ -100,10 +100,14 @@ def clear_db():
 def test_stat_event_state(monkeypatch):
     mock_date(monkeypatch, {'year': 2022, 'month': 5, 'day': 6, 'hour': 2})
     organizer = create_organizer()
-    event_borrador = create_event({"date": "2022-05-10"})
-    event_publicado1 = create_event({"date": "2022-05-10"})
-    event_publicado2 = create_event({"date": "2022-05-10"})
-    event_cancelado = create_event({"date": "2022-05-10"})
+    event_borrador = create_event({"date": "2022-05-10", "organizer": organizer["id"]})
+    event_publicado1 = create_event(
+        {"date": "2022-05-10", "organizer": organizer["id"]}
+    )
+    event_publicado2 = create_event(
+        {"date": "2022-05-10", "organizer": organizer["id"]}
+    )
+    event_cancelado = create_event({"date": "2022-05-10", "organizer": organizer["id"]})
     event_terminado = create_event(
         {
             "date": "2022-05-08",
@@ -118,9 +122,12 @@ def test_stat_event_state(monkeypatch):
                     'description': 'Una noche de teatro unica',
                 }
             ],
+            "organizer": organizer["id"],
         }
     )
-    event_terminado2 = create_event({"date": "2022-05-07"})
+    event_terminado2 = create_event(
+        {"date": "2022-05-07", "organizer": organizer["id"]}
+    )
     event_suspendido = create_event(
         {"date": "2022-05-10", "organizer": organizer["id"]}
     )
@@ -150,9 +157,13 @@ def test_stat_event_state(monkeypatch):
 def test_stat_event_state_with_some_0(monkeypatch):
     mock_date(monkeypatch, {'year': 2022, 'month': 5, 'day': 6, 'hour': 2})
     organizer = create_organizer()
-    event_borrador = create_event({"date": "2022-05-10"})
-    event_publicado1 = create_event({"date": "2022-05-10"})
-    event_publicado2 = create_event({"date": "2022-05-10"})
+    event_borrador = create_event({"date": "2022-05-10", "organizer": organizer["id"]})
+    event_publicado1 = create_event(
+        {"date": "2022-05-10", "organizer": organizer["id"]}
+    )
+    event_publicado2 = create_event(
+        {"date": "2022-05-10", "organizer": organizer["id"]}
+    )
     event_terminado = create_event(
         {
             "date": "2022-05-08",
@@ -167,9 +178,12 @@ def test_stat_event_state_with_some_0(monkeypatch):
                     'description': 'Una noche de teatro unica',
                 }
             ],
+            "organizer": organizer["id"],
         }
     )
-    event_terminado2 = create_event({"date": "2022-05-07"})
+    event_terminado2 = create_event(
+        {"date": "2022-05-07", "organizer": organizer["id"]}
+    )
     event_suspendido = create_event(
         {"date": "2022-05-10", "organizer": organizer["id"]}
     )
@@ -197,11 +211,15 @@ def test_stat_event_state_with_some_0(monkeypatch):
 def test_stat_event_state_diferrent_dates(monkeypatch):
     mock_date(monkeypatch, {'year': 2022, 'month': 5, 'day': 4, 'hour': 2})
     organizer = create_organizer()
-    event_borrador = create_event({"date": "2022-05-10"})
-    event_publicado1 = create_event({"date": "2022-05-10"})
+    event_borrador = create_event({"date": "2022-05-10", "organizer": organizer["id"]})
+    event_publicado1 = create_event(
+        {"date": "2022-05-10", "organizer": organizer["id"]}
+    )
     mock_date(monkeypatch, {'year': 2022, 'month': 5, 'day': 5, 'hour': 2})
-    event_publicado2 = create_event({"date": "2022-05-10"})
-    event_cancelado = create_event({"date": "2022-05-10"})
+    event_publicado2 = create_event(
+        {"date": "2022-05-10", "organizer": organizer["id"]}
+    )
+    event_cancelado = create_event({"date": "2022-05-10", "organizer": organizer["id"]})
     event_terminado = create_event(
         {
             "date": "2022-05-08",
@@ -216,9 +234,12 @@ def test_stat_event_state_diferrent_dates(monkeypatch):
                     'description': 'Una noche de teatro unica',
                 }
             ],
+            "organizer": organizer["id"],
         }
     )
-    event_terminado2 = create_event({"date": "2022-05-07"})
+    event_terminado2 = create_event(
+        {"date": "2022-05-07", "organizer": organizer["id"]}
+    )
     event_suspendido = create_event(
         {"date": "2022-05-10", "organizer": organizer["id"]}
     )
@@ -245,4 +266,66 @@ def test_stat_event_state_diferrent_dates(monkeypatch):
     }
 
 
-# test fechas distintas
+def test_stat_top_organizers(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 5, 'day': 6, 'hour': 2})
+    organizer = create_organizer(
+        {
+            "first_name": "organizer1",
+            "last_name": "a",
+            "id": "123",
+            "email": "organizer1@mail.com",
+        }
+    )
+    organizer2 = create_organizer(
+        {
+            "first_name": "organizer2",
+            "last_name": "b",
+            "id": "223",
+            "email": "organizer2@mail.com",
+        }
+    )
+    organizer3 = create_organizer(
+        {
+            "first_name": "organizer3",
+            "last_name": "c",
+            "id": "323",
+            "email": "organizer3@mail.com",
+        }
+    )
+    organizer4 = create_organizer(
+        {
+            "first_name": "organizer4",
+            "last_name": "d",
+            "id": "423",
+            "email": "organizer4@mail.com",
+        }
+    )
+
+    event = create_event(
+        {"organizer": organizer["id"], "date": "2022-05-10"}
+    )  # Publicado
+    client.put(f'api/events/{event["id"]}/publish')
+    create_event({"organizer": organizer["id"], "date": "2022-05-10"})  # Borrador
+
+    event = create_event(
+        {"organizer": organizer2["id"], "date": "2022-05-10"}
+    )  # Publicado
+    client.put(f'api/events/{event["id"]}/publish')
+    event = create_event(
+        {"organizer": organizer2["id"], "date": "2022-05-06"}
+    )  # Terminado
+    client.put(f'api/events/{event["id"]}/publish')
+
+    event = create_event(
+        {"organizer": organizer3["id"], "date": "2022-05-10"}
+    )  # Cancelado
+    client.put(f'api/events/{event["id"]}/cancel')
+
+    mock_date(monkeypatch, {'year': 2022, 'month': 5, 'day': 7, 'hour': 2})
+    response = client.get(URI + '?start_date=2022-05-05&end_date=2022-05-07')
+    assert response.status_code == 200
+    data = response.json()
+    assert data["top_organizers"]["organizers"] == [
+        {"name": "organizer2 b", "events": 2},
+        {"name": "organizer1 a", "events": 1},
+    ]

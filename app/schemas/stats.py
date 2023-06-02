@@ -1,6 +1,11 @@
 from __future__ import annotations
 from pydantic import BaseModel, Field
-from app.models.stat import EventBookingsByHourStat, AppStats
+from app.models.stat import (
+    EventBookingsByHourStat,
+    AppStats,
+    OrganizerStat,
+    TopOrganizersStat,
+)
 
 
 class EventBookingsByHourStatSchema(BaseModel):
@@ -23,8 +28,32 @@ class EventStatesStatSchema(BaseModel):
     Suspendido: int = Field(..., example=0)
 
 
+class OrganizerStatSchema(BaseModel):
+    name: str = Field(..., example="Organizer")
+    events: int = Field(..., example=0)
+
+    @classmethod
+    def from_model(cls, stat: OrganizerStat) -> OrganizerStatSchema:
+        return OrganizerStatSchema(
+            name=stat.name,
+            events=stat.events,
+        )
+
+
+class TopOrganizersStatSchema(BaseModel):
+    organizers: list[OrganizerStatSchema]
+
+    @classmethod
+    def from_model(cls, stat: TopOrganizersStat) -> TopOrganizersStatSchema:
+        organizers = [
+            OrganizerStatSchema.from_model(organizer) for organizer in stat.organizers
+        ]
+        return TopOrganizersStatSchema(organizers=organizers)
+
+
 class AppStatsSchema(BaseModel):
     event_states: EventStatesStatSchema
+    top_organizers: TopOrganizersStatSchema
 
     @classmethod
     def from_model(cls, stats: AppStats) -> AppStatsSchema:
@@ -35,7 +64,8 @@ class AppStatsSchema(BaseModel):
             Cancelado=stats.event_states.Cancelado,
             Suspendido=stats.event_states.Suspendido,
         )
-        return AppStatsSchema(event_states=event_states)
+        top_organizers = TopOrganizersStatSchema.from_model(stats.top_organizers)
+        return AppStatsSchema(event_states=event_states, top_organizers=top_organizers)
 
 
 class StatParams(BaseModel):

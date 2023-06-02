@@ -8,7 +8,7 @@ from app.models.event import Type, Event, Location, Agenda, Faq, State, Collabor
 from app.repositories.errors import EventNotFoundError
 from datetime import date, time, timedelta
 from app.utils.now import getNow
-from app.models.stat import EventStatesStat
+from app.models.stat import EventStatesStat, TopOrganizersStat, OrganizerStat
 
 EARTH_RADIUS_METERS = 6_371_000
 
@@ -87,6 +87,12 @@ class EventRepository(ABC):
 
     @abstractmethod
     def update_state_all_events(self):
+        pass
+
+    @abstractmethod
+    def get_top_organizers_stat(
+        self, start_date: str, end_date: str
+    ) -> TopOrganizersStat:
         pass
 
 
@@ -218,6 +224,45 @@ class PersistentEventRepository(EventRepository):
         }
 
         self.events.update_many(filter=filter_pipeline, update=update_pipeline)
+
+    def get_top_organizers_stat(
+        self, start_date: str, end_date: str
+    ) -> TopOrganizersStat:
+        pipeline = [
+            {
+                '$match': {
+                    'created_at': {
+                        '$gte': start_date,
+                        '$lte': end_date,
+                    },
+                    '$or': [
+                        {'state': State.Publicado.value},
+                        {'state': State.Finalizado.value},
+                    ],
+                }
+            },
+            {
+                '$group': {
+                    '_id': '$organizer',
+                    'count': {'$sum': 1},
+                }
+            },
+            {
+                '$project': {
+                    'organizer': '$_id',
+                    'count': '$count',
+                }
+            },
+            {'$sort': {'count': -1}},
+            {'$limit': 10},
+        ]
+        result = self.events.aggregate(pipeline)
+        return TopOrganizersStat(
+            [
+                OrganizerStat(name=doc['organizer'], events=doc['count'])
+                for doc in result
+            ]
+        )
 
     def __serialize_search(self, search: Search) -> dict:
         srch = {

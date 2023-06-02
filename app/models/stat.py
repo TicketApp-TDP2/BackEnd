@@ -24,6 +24,20 @@ class EventStatesStat:
         self.Suspendido = Suspendido
 
 
+class OrganizerStat:
+    def __init__(self, name: str, events: int):
+        self.name = name
+        self.events = events
+
+
+class TopOrganizersStat:
+    def __init__(self, organizers: list[OrganizerStat]):
+        self.organizers = organizers
+
+
 class AppStats:
-    def __init__(self, event_states: EventStatesStat):
+    def __init__(
+        self, event_states: EventStatesStat, top_organizers: TopOrganizersStat
+    ):
         self.event_states = event_states
+        self.top_organizers = top_organizers
