@@ -30,14 +30,9 @@ class OrganizerStat:
         self.events = events
 
 
-class TopOrganizersStat:
-    def __init__(self, organizers: list[OrganizerStat]):
-        self.organizers = organizers
-
-
 class AppStats:
     def __init__(
-        self, event_states: EventStatesStat, top_organizers: TopOrganizersStat
+        self, event_states: EventStatesStat, top_organizers: list[OrganizerStat]
     ):
         self.event_states = event_states
         self.top_organizers = top_organizers

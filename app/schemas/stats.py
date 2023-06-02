@@ -4,7 +4,6 @@ from app.models.stat import (
     EventBookingsByHourStat,
     AppStats,
     OrganizerStat,
-    TopOrganizersStat,
 )
 
 
@@ -40,20 +39,9 @@ class OrganizerStatSchema(BaseModel):
         )
 
 
-class TopOrganizersStatSchema(BaseModel):
-    organizers: list[OrganizerStatSchema]
-
-    @classmethod
-    def from_model(cls, stat: TopOrganizersStat) -> TopOrganizersStatSchema:
-        organizers = [
-            OrganizerStatSchema.from_model(organizer) for organizer in stat.organizers
-        ]
-        return TopOrganizersStatSchema(organizers=organizers)
-
-
 class AppStatsSchema(BaseModel):
     event_states: EventStatesStatSchema
-    top_organizers: TopOrganizersStatSchema
+    top_organizers: list[OrganizerStatSchema]
 
     @classmethod
     def from_model(cls, stats: AppStats) -> AppStatsSchema:
@@ -64,7 +52,10 @@ class AppStatsSchema(BaseModel):
             Cancelado=stats.event_states.Cancelado,
             Suspendido=stats.event_states.Suspendido,
         )
-        top_organizers = TopOrganizersStatSchema.from_model(stats.top_organizers)
+        top_organizers = [
+            OrganizerStatSchema.from_model(organizer)
+            for organizer in stats.top_organizers
+        ]
         return AppStatsSchema(event_states=event_states, top_organizers=top_organizers)
 
 

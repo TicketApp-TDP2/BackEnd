@@ -325,7 +325,98 @@ def test_stat_top_organizers(monkeypatch):
     response = client.get(URI + '?start_date=2022-05-05&end_date=2022-05-07')
     assert response.status_code == 200
     data = response.json()
-    assert data["top_organizers"]["organizers"] == [
+    assert data["top_organizers"] == [
         {"name": "organizer2 b", "events": 2},
         {"name": "organizer1 a", "events": 1},
     ]
+
+
+def test_stat_top_organizers_different_dates(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 5, 'day': 4, 'hour': 2})
+    organizer = create_organizer(
+        {
+            "first_name": "organizer1",
+            "last_name": "a",
+            "id": "123",
+            "email": "organizer1@mail.com",
+        }
+    )
+    organizer2 = create_organizer(
+        {
+            "first_name": "organizer2",
+            "last_name": "b",
+            "id": "223",
+            "email": "organizer2@mail.com",
+        }
+    )
+    organizer3 = create_organizer(
+        {
+            "first_name": "organizer3",
+            "last_name": "c",
+            "id": "323",
+            "email": "organizer3@mail.com",
+        }
+    )
+    organizer4 = create_organizer(
+        {
+            "first_name": "organizer4",
+            "last_name": "d",
+            "id": "423",
+            "email": "organizer4@mail.com",
+        }
+    )
+
+    event = create_event(
+        {"organizer": organizer["id"], "date": "2022-05-10"}
+    )  # Publicado
+    client.put(f'api/events/{event["id"]}/publish')
+    mock_date(monkeypatch, {'year': 2022, 'month': 5, 'day': 5, 'hour': 2})
+    event = create_event(
+        {"organizer": organizer["id"], "date": "2022-05-10"}
+    )  # Publicado
+    client.put(f'api/events/{event["id"]}/publish')
+
+    event = create_event(
+        {"organizer": organizer2["id"], "date": "2022-05-10"}
+    )  # Publicado
+    client.put(f'api/events/{event["id"]}/publish')
+    event = create_event(
+        {"organizer": organizer2["id"], "date": "2022-05-06"}
+    )  # Terminado
+    client.put(f'api/events/{event["id"]}/publish')
+
+    event = create_event({"organizer": organizer3["id"], "date": "2022-05-06"})
+
+    mock_date(monkeypatch, {'year': 2022, 'month': 5, 'day': 7, 'hour': 2})
+    response = client.get(URI + '?start_date=2022-05-05&end_date=2022-05-07')
+    assert response.status_code == 200
+    data = response.json()
+    assert data["top_organizers"] == [
+        {"name": "organizer2 b", "events": 2},
+        {"name": "organizer3 c", "events": 1},
+        {"name": "organizer1 a", "events": 1},
+    ]
+
+
+def test_stat_top_organizers_more_than_10(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 5, 'day': 6, 'hour': 2})
+    organizers = [
+        create_organizer(
+            {
+                "first_name": f"organizer{i}",
+                "last_name": f"{i}",
+                "id": f"{i}23",
+                "email": f"organizer{i}@mail.com",
+            }
+        )
+        for i in range(1, 12)
+    ]
+
+    for organizer in organizers:
+        event = create_event({"organizer": organizer["id"], "date": "2022-05-10"})
+        client.put(f'api/events/{event["id"]}/publish')
+
+    response = client.get(URI + '?start_date=2022-05-05&end_date=2022-05-07')
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["top_organizers"]) == 10

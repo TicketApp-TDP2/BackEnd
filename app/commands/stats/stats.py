@@ -29,11 +29,11 @@ class GetStatsCommand:
         top_organizers_stat = self.event_repository.get_top_organizers_stat(
             self.params.start_date, self.params.end_date
         )
-        top_organizers_stat.organizers = [
+        top_organizers_stat = [
             OrganizerStat(
                 name=self.get_organizer_name(organizer.name), events=organizer.events
             )
-            for organizer in top_organizers_stat.organizers
+            for organizer in top_organizers_stat
         ]
         stats = AppStats(
             event_states=event_states_stat, top_organizers=top_organizers_stat

@@ -8,7 +8,7 @@ from app.models.event import Type, Event, Location, Agenda, Faq, State, Collabor
 from app.repositories.errors import EventNotFoundError
 from datetime import date, time, timedelta
 from app.utils.now import getNow
-from app.models.stat import EventStatesStat, TopOrganizersStat, OrganizerStat
+from app.models.stat import EventStatesStat, OrganizerStat
 
 EARTH_RADIUS_METERS = 6_371_000
 
@@ -92,7 +92,7 @@ class EventRepository(ABC):
     @abstractmethod
     def get_top_organizers_stat(
         self, start_date: str, end_date: str
-    ) -> TopOrganizersStat:
+    ) -> list[OrganizerStat]:
         pass
 
 
@@ -227,7 +227,7 @@ class PersistentEventRepository(EventRepository):
 
     def get_top_organizers_stat(
         self, start_date: str, end_date: str
-    ) -> TopOrganizersStat:
+    ) -> list[OrganizerStat]:
         pipeline = [
             {
                 '$match': {
@@ -257,12 +257,9 @@ class PersistentEventRepository(EventRepository):
             {'$limit': 10},
         ]
         result = self.events.aggregate(pipeline)
-        return TopOrganizersStat(
-            [
-                OrganizerStat(name=doc['organizer'], events=doc['count'])
-                for doc in result
-            ]
-        )
+        return [
+            OrganizerStat(name=doc['organizer'], events=doc['count']) for doc in result
+        ]
 
     def __serialize_search(self, search: Search) -> dict:
         srch = {
