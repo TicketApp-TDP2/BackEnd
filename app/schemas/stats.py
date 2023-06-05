@@ -84,3 +84,4 @@ class AppStatsSchema(BaseModel):
 class StatParams(BaseModel):
     start_date: str = Field(..., min_length=10, max_length=10)
     end_date: str = Field(..., min_length=10, max_length=10)
+    group_by: str = Field(default="day")

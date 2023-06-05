@@ -42,7 +42,7 @@ class BookingRepository(ABC):
 
     @abstractmethod
     def get_verified_bookings_stat(
-        self, start_date: str, end_date: str
+        self, start_date: str, end_date: str, group_by: str
     ) -> list[VerifiedBookingStat]:
         pass
 
@@ -101,12 +101,21 @@ class PersistentBookingRepository(BookingRepository):
         return booking
 
     def get_verified_bookings_stat(
-        self, start_date: str, end_date: str
+        self, start_date: str, end_date: str, group_by: str
     ) -> list[VerifiedBookingStat]:
+        match group_by:
+            case "day":
+                substr = 10
+            case "month":
+                substr = 7
+            case "year":
+                substr = 4
+            case _:
+                substr = 10
         pipeline = [
             {'$match': {'verified': True}},
             {'$match': {'verified_time': {'$gte': start_date, '$lte': end_date}}},
-            {'$project': {'verified_time': {'$substr': ['$verified_time', 0, 10]}}},
+            {'$project': {'verified_time': {'$substr': ['$verified_time', 0, substr]}}},
             {'$group': {'_id': '$verified_time', 'count': {'$sum': 1}}},
             {'$sort': {'_id': 1}},
         ]

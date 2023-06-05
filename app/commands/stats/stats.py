@@ -39,7 +39,7 @@ class GetStatsCommand:
             for organizer in top_organizers_stat
         ]
         verified_bookings_stat = self.booking_repository.get_verified_bookings_stat(
-            self.params.start_date, self.params.end_date
+            self.params.start_date, self.params.end_date, self.params.group_by
         )
 
         stats = AppStats(

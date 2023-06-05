@@ -477,3 +477,182 @@ def test_stat_booking_verified_by_day(monkeypatch):
         {"date": "2022-05-08", "bookings": 3},
         {"date": "2022-05-09", "bookings": 2},
     ]
+
+
+def test_stat_booking_verified_by_month(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 4, 'day': 6, 'hour': 2})
+    organizer = create_organizer(
+        {
+            "first_name": "organizer1",
+            "last_name": "a",
+            "id": "123",
+            "email": "organizer1@mail.com",
+        }
+    )
+
+    events = [
+        create_event({"organizer": organizer["id"], "date": "2022-08-10"})
+        for i in range(3)
+    ]
+    for event in events:
+        client.put(f'api/events/{event["id"]}/publish')
+
+    users = [
+        create_user({"id": f"123{i}", "email": f"user{i}@mail.com"}) for i in range(3)
+    ]
+    bookings = []
+    for event in events:
+        for user in users:
+            booking_body = {
+                "event_id": event['id'],
+                "reserver_id": user['id'],
+            }
+            response = client.post('api/bookings', json=booking_body)
+            bookings.append(response.json()["id"])
+
+    mock_date(monkeypatch, {'year': 2022, 'month': 5, 'day': 7, 'hour': 2})
+    body = {"event_id": events[0]["id"]}
+    client.put('api/bookings' + f'/{bookings[0]}/verify', json=body)
+    mock_date(monkeypatch, {'year': 2022, 'month': 5, 'day': 15, 'hour': 2})
+    client.put('api/bookings' + f'/{bookings[1]}/verify', json=body)
+
+    mock_date(monkeypatch, {'year': 2022, 'month': 6, 'day': 8, 'hour': 2})
+    body = {"event_id": events[1]["id"]}
+    client.put('api/bookings' + f'/{bookings[3]}/verify', json=body)
+    mock_date(monkeypatch, {'year': 2022, 'month': 6, 'day': 12, 'hour': 2})
+    client.put('api/bookings' + f'/{bookings[4]}/verify', json=body)
+    client.put('api/bookings' + f'/{bookings[5]}/verify', json=body)
+
+    mock_date(monkeypatch, {'year': 2022, 'month': 7, 'day': 9, 'hour': 2})
+    body = {"event_id": events[2]["id"]}
+    client.put('api/bookings' + f'/{bookings[6]}/verify', json=body)
+    client.put('api/bookings' + f'/{bookings[7]}/verify', json=body)
+
+    response = client.get(
+        URI + '?start_date=2022-05-07&end_date=2022-07-10&group_by=month'
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["verified_bookings"] == [
+        {"date": "2022-05", "bookings": 2},
+        {"date": "2022-06", "bookings": 3},
+        {"date": "2022-07", "bookings": 2},
+    ]
+
+
+def test_stat_booking_verified_by_year(monkeypatch):
+    mock_date(monkeypatch, {'year': 2020, 'month': 4, 'day': 6, 'hour': 2})
+    organizer = create_organizer(
+        {
+            "first_name": "organizer1",
+            "last_name": "a",
+            "id": "123",
+            "email": "organizer1@mail.com",
+        }
+    )
+
+    events = [
+        create_event({"organizer": organizer["id"], "date": "2022-08-10"})
+        for i in range(3)
+    ]
+    for event in events:
+        client.put(f'api/events/{event["id"]}/publish')
+
+    users = [
+        create_user({"id": f"123{i}", "email": f"user{i}@mail.com"}) for i in range(3)
+    ]
+    bookings = []
+    for event in events:
+        for user in users:
+            booking_body = {
+                "event_id": event['id'],
+                "reserver_id": user['id'],
+            }
+            response = client.post('api/bookings', json=booking_body)
+            bookings.append(response.json()["id"])
+
+    mock_date(monkeypatch, {'year': 2020, 'month': 5, 'day': 7, 'hour': 2})
+    body = {"event_id": events[0]["id"]}
+    client.put('api/bookings' + f'/{bookings[0]}/verify', json=body)
+    mock_date(monkeypatch, {'year': 2020, 'month': 7, 'day': 15, 'hour': 2})
+    client.put('api/bookings' + f'/{bookings[1]}/verify', json=body)
+
+    mock_date(monkeypatch, {'year': 2021, 'month': 6, 'day': 8, 'hour': 2})
+    body = {"event_id": events[1]["id"]}
+    client.put('api/bookings' + f'/{bookings[3]}/verify', json=body)
+    mock_date(monkeypatch, {'year': 2021, 'month': 6, 'day': 12, 'hour': 2})
+    client.put('api/bookings' + f'/{bookings[4]}/verify', json=body)
+    client.put('api/bookings' + f'/{bookings[5]}/verify', json=body)
+
+    mock_date(monkeypatch, {'year': 2022, 'month': 7, 'day': 9, 'hour': 2})
+    body = {"event_id": events[2]["id"]}
+    client.put('api/bookings' + f'/{bookings[6]}/verify', json=body)
+    client.put('api/bookings' + f'/{bookings[7]}/verify', json=body)
+
+    response = client.get(
+        URI + '?start_date=2020-05-07&end_date=2022-07-10&group_by=year'
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["verified_bookings"] == [
+        {"date": "2020", "bookings": 2},
+        {"date": "2021", "bookings": 3},
+        {"date": "2022", "bookings": 2},
+    ]
+
+
+def test_stat_booking_verified_by_year_date_filter(monkeypatch):
+    mock_date(monkeypatch, {'year': 2020, 'month': 4, 'day': 6, 'hour': 2})
+    organizer = create_organizer(
+        {
+            "first_name": "organizer1",
+            "last_name": "a",
+            "id": "123",
+            "email": "organizer1@mail.com",
+        }
+    )
+
+    events = [
+        create_event({"organizer": organizer["id"], "date": "2022-08-10"})
+        for i in range(3)
+    ]
+    for event in events:
+        client.put(f'api/events/{event["id"]}/publish')
+
+    users = [
+        create_user({"id": f"123{i}", "email": f"user{i}@mail.com"}) for i in range(3)
+    ]
+    bookings = []
+    for event in events:
+        for user in users:
+            booking_body = {
+                "event_id": event['id'],
+                "reserver_id": user['id'],
+            }
+            response = client.post('api/bookings', json=booking_body)
+            bookings.append(response.json()["id"])
+
+    mock_date(monkeypatch, {'year': 2020, 'month': 5, 'day': 7, 'hour': 2})
+    body = {"event_id": events[0]["id"]}
+    client.put('api/bookings' + f'/{bookings[0]}/verify', json=body)
+    mock_date(monkeypatch, {'year': 2020, 'month': 7, 'day': 15, 'hour': 2})
+    client.put('api/bookings' + f'/{bookings[1]}/verify', json=body)
+
+    mock_date(monkeypatch, {'year': 2021, 'month': 6, 'day': 8, 'hour': 2})
+    body = {"event_id": events[1]["id"]}
+    client.put('api/bookings' + f'/{bookings[3]}/verify', json=body)
+    mock_date(monkeypatch, {'year': 2021, 'month': 6, 'day': 12, 'hour': 2})
+    client.put('api/bookings' + f'/{bookings[4]}/verify', json=body)
+    client.put('api/bookings' + f'/{bookings[5]}/verify', json=body)
+
+    mock_date(monkeypatch, {'year': 2022, 'month': 7, 'day': 9, 'hour': 2})
+    body = {"event_id": events[2]["id"]}
+    client.put('api/bookings' + f'/{bookings[6]}/verify', json=body)
+    client.put('api/bookings' + f'/{bookings[7]}/verify', json=body)
+
+    response = client.get(
+        URI + '?start_date=2022-05-07&end_date=2022-07-10&group_by=year'
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["verified_bookings"] == [{"date": "2022", "bookings": 2}]
