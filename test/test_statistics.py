@@ -420,3 +420,60 @@ def test_stat_top_organizers_more_than_10(monkeypatch):
     assert response.status_code == 200
     data = response.json()
     assert len(data["top_organizers"]) == 10
+
+
+def test_stat_booking_verified_by_day(monkeypatch):
+    mock_date(monkeypatch, {'year': 2022, 'month': 5, 'day': 6, 'hour': 2})
+    organizer = create_organizer(
+        {
+            "first_name": "organizer1",
+            "last_name": "a",
+            "id": "123",
+            "email": "organizer1@mail.com",
+        }
+    )
+
+    events = [
+        create_event({"organizer": organizer["id"], "date": "2022-05-10"})
+        for i in range(3)
+    ]
+    for event in events:
+        client.put(f'api/events/{event["id"]}/publish')
+
+    users = [
+        create_user({"id": f"123{i}", "email": f"user{i}@mail.com"}) for i in range(3)
+    ]
+    bookings = []
+    for event in events:
+        for user in users:
+            booking_body = {
+                "event_id": event['id'],
+                "reserver_id": user['id'],
+            }
+            response = client.post('api/bookings', json=booking_body)
+            bookings.append(response.json()["id"])
+
+    mock_date(monkeypatch, {'year': 2022, 'month': 5, 'day': 7, 'hour': 2})
+    body = {"event_id": events[0]["id"]}
+    client.put('api/bookings' + f'/{bookings[0]}/verify', json=body)
+    client.put('api/bookings' + f'/{bookings[1]}/verify', json=body)
+
+    mock_date(monkeypatch, {'year': 2022, 'month': 5, 'day': 8, 'hour': 2})
+    body = {"event_id": events[1]["id"]}
+    client.put('api/bookings' + f'/{bookings[3]}/verify', json=body)
+    client.put('api/bookings' + f'/{bookings[4]}/verify', json=body)
+    client.put('api/bookings' + f'/{bookings[5]}/verify', json=body)
+
+    mock_date(monkeypatch, {'year': 2022, 'month': 5, 'day': 9, 'hour': 2})
+    body = {"event_id": events[2]["id"]}
+    client.put('api/bookings' + f'/{bookings[6]}/verify', json=body)
+    client.put('api/bookings' + f'/{bookings[7]}/verify', json=body)
+
+    response = client.get(URI + '?start_date=2022-05-07&end_date=2022-05-10')
+    assert response.status_code == 200
+    data = response.json()
+    assert data["verified_bookings"] == [
+        {"date": "2022-05-07", "bookings": 2},
+        {"date": "2022-05-08", "bookings": 3},
+        {"date": "2022-05-09", "bookings": 2},
+    ]

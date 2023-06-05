@@ -1,6 +1,7 @@
 from fastapi.exceptions import HTTPException
 from app.repositories.event import PersistentEventRepository
 from app.repositories.organizers import PersistentOrganizerRepository
+from app.repositories.bookings import PersistentBookingRepository
 from fastapi import status, APIRouter, Depends
 from app.config.logger import setup_logger
 from app.schemas.stats import AppStatsSchema, StatParams
@@ -18,7 +19,10 @@ async def get_stats(params: StatParams = Depends()):
     try:
         event_repository = PersistentEventRepository()
         organizer_repository = PersistentOrganizerRepository()
-        stat = GetStatsCommand(event_repository, organizer_repository, params).execute()
+        booking_repository = PersistentBookingRepository()
+        stat = GetStatsCommand(
+            event_repository, organizer_repository, booking_repository, params
+        ).execute()
     except TicketAppError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:

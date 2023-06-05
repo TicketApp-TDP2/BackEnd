@@ -4,6 +4,7 @@ from app.models.stat import (
     EventBookingsByHourStat,
     AppStats,
     OrganizerStat,
+    VerifiedBookingStat,
 )
 
 
@@ -39,9 +40,22 @@ class OrganizerStatSchema(BaseModel):
         )
 
 
+class VerifiedBookingStatSchema(BaseModel):
+    date: str = Field(...)
+    bookings: int = Field(..., example=0)
+
+    @classmethod
+    def from_model(cls, stat: VerifiedBookingStat) -> VerifiedBookingStatSchema:
+        return VerifiedBookingStatSchema(
+            date=stat.date,
+            bookings=stat.bookings,
+        )
+
+
 class AppStatsSchema(BaseModel):
     event_states: EventStatesStatSchema
     top_organizers: list[OrganizerStatSchema]
+    verified_bookings: list[VerifiedBookingStatSchema]
 
     @classmethod
     def from_model(cls, stats: AppStats) -> AppStatsSchema:
@@ -56,7 +70,15 @@ class AppStatsSchema(BaseModel):
             OrganizerStatSchema.from_model(organizer)
             for organizer in stats.top_organizers
         ]
-        return AppStatsSchema(event_states=event_states, top_organizers=top_organizers)
+        verified_bookings = [
+            VerifiedBookingStatSchema.from_model(booking)
+            for booking in stats.verified_bookings
+        ]
+        return AppStatsSchema(
+            event_states=event_states,
+            top_organizers=top_organizers,
+            verified_bookings=verified_bookings,
+        )
 
 
 class StatParams(BaseModel):

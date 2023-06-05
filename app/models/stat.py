@@ -30,9 +30,19 @@ class OrganizerStat:
         self.events = events
 
 
+class VerifiedBookingStat:
+    def __init__(self, date: str, bookings: int):
+        self.date = date
+        self.bookings = bookings
+
+
 class AppStats:
     def __init__(
-        self, event_states: EventStatesStat, top_organizers: list[OrganizerStat]
+        self,
+        event_states: EventStatesStat,
+        top_organizers: list[OrganizerStat],
+        verified_bookings: list[VerifiedBookingStat],
     ):
         self.event_states = event_states
         self.top_organizers = top_organizers
+        self.verified_bookings = verified_bookings
