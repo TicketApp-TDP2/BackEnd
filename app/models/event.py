@@ -96,6 +96,7 @@ class Event:
         verified_vacants: int,
         collaborators: list[Collaborator],
         created_at: date,
+        suspended_at: str,
     ):
         self.name = name
         self.description = description
@@ -117,6 +118,7 @@ class Event:
         self.verified_vacants = verified_vacants
         self.collaborators = collaborators
         self.created_at = created_at
+        self.suspended_at = suspended_at
 
     @classmethod
     def new(
@@ -159,4 +161,5 @@ class Event:
             verified_vacants=0,
             collaborators=[],
             created_at=created_at,
+            suspended_at="Not_suspended",
         )

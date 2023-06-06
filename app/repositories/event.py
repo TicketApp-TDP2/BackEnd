@@ -95,6 +95,10 @@ class EventRepository(ABC):
     ) -> list[OrganizerStat]:
         pass
 
+    @abstractmethod
+    def update_suspended_at(self, id: str, suspended_at: str) -> Event:
+        pass
+
 
 class PersistentEventRepository(EventRepository):
     def __init__(self):
@@ -168,6 +172,13 @@ class PersistentEventRepository(EventRepository):
     def update_event(self, event: Event) -> Event:
         data = self.__serialize_event(event)
         self.events.update_one({'_id': event.id}, {'$set': data})
+        return event
+
+    def update_suspended_at(self, id: str, suspended_at: str) -> Event:
+        event = self.get_event(id)
+        event.suspended_at = suspended_at
+        data = self.__serialize_event(event)
+        self.events.update_one({'_id': id}, {'$set': data})
         return event
 
     def get_event_states_stat(self, start_date: str, end_date: str) -> EventStatesStat:
@@ -389,6 +400,7 @@ class PersistentEventRepository(EventRepository):
             'verified_vacants': event.verified_vacants,
             'collaborators': serialized_collaborators,
             'created_at': str(event.created_at),
+            'suspended_at': event.suspended_at,
         }
 
         return serialized
@@ -458,4 +470,5 @@ class PersistentEventRepository(EventRepository):
             verified_vacants=data['verified_vacants'],
             collaborators=deserialized_collaborators,
             created_at=date.fromisoformat(data['created_at']),
+            suspended_at=data['suspended_at'],
         )

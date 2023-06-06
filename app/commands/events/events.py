@@ -272,6 +272,7 @@ class UpdateEventCommand:
             verified_vacants=event.verified_vacants,
             collaborators=event.collaborators,
             created_at=event.created_at,
+            suspended_at=event.suspended_at,
         )
         if event.start_time >= event.end_time:
             raise EventTimeError
@@ -293,6 +294,9 @@ class SuspendEventCommand:
         event = self.event_repository.get_event(self.id)
         if event.state == State.Publicado:
             event = self.event_repository.update_state_event(self.id, State.Suspendido)
+            event = self.event_repository.update_suspended_at(
+                self.id, str(getNow().date())
+            )
         else:
             raise EventCannotBeSuspendedError
         return EventSchema.from_model(event)
