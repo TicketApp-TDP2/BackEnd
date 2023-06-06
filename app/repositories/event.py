@@ -8,7 +8,7 @@ from app.models.event import Type, Event, Location, Agenda, Faq, State, Collabor
 from app.repositories.errors import EventNotFoundError
 from datetime import date, time, timedelta
 from app.utils.now import getNow
-from app.models.stat import EventStatesStat, OrganizerStat
+from app.models.stat import EventStatesStat, OrganizerStat, SuspendedEventStat
 
 EARTH_RADIUS_METERS = 6_371_000
 
@@ -83,6 +83,10 @@ class EventRepository(ABC):
 
     @abstractmethod
     def get_event_states_stat(self, start_date: str, end_date: str) -> EventStatesStat:
+        pass
+
+    @abstractmethod
+    def get_suspended_by_time(self, start: str, end: str) -> list[SuspendedEventStat]:
         pass
 
     @abstractmethod
@@ -270,6 +274,47 @@ class PersistentEventRepository(EventRepository):
                 name=doc['organizer'],
                 verified_bookings=doc['count'],
                 id=doc['organizer'],
+            )
+            for doc in result
+        ]
+
+    def get_suspended_by_time(self, start: str, end: str) -> list[SuspendedEventStat]:
+        pipeline = [
+            {
+                '$match': {
+                    'suspended_at': {
+                        '$ne': "Not_suspended",
+                    }
+                }
+            },
+            {
+                '$match': {
+                    'suspended_at': {
+                        '$gte': start,
+                        '$lte': end,
+                    }
+                }
+            },
+            {'$project': {'suspended_at': {'$substr': ['$suspended_at', 0, 7]}}},
+            {
+                '$group': {
+                    '_id': '$suspended_at',
+                    'count': {'$sum': 1},
+                }
+            },
+            {
+                '$project': {
+                    'suspended_at': '$_id',
+                    'count': '$count',
+                }
+            },
+            {'$sort': {'suspended_at': 1}},
+        ]
+        result = self.events.aggregate(pipeline)
+        return [
+            SuspendedEventStat(
+                date=doc['suspended_at'],
+                suspended=doc['count'],
             )
             for doc in result
         ]

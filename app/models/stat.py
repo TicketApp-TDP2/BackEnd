@@ -43,6 +43,12 @@ class ComplaintsByTimeStat:
         self.complaints = complaints
 
 
+class SuspendedEventStat:
+    def __init__(self, date: str, suspended: int):
+        self.date = date
+        self.suspended = suspended
+
+
 class AppStats:
     def __init__(
         self,
@@ -50,8 +56,10 @@ class AppStats:
         top_organizers: list[OrganizerStat],
         verified_bookings: list[VerifiedBookingStat],
         complaints_by_time: list[ComplaintsByTimeStat],
+        suspended_by_time: list[SuspendedEventStat],
     ):
         self.event_states = event_states
         self.top_organizers = top_organizers
         self.verified_bookings = verified_bookings
         self.complaints_by_time = complaints_by_time
+        self.suspended_by_time = suspended_by_time

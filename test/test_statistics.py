@@ -772,3 +772,79 @@ def test_complaint_stat(monkeypatch):
         {"date": "2022-05", "complaints": 1},
         {"date": "2022-06", "complaints": 1},
     ]
+
+
+def test_suspend_stat(monkeypatch):
+    mock_date(monkeypatch, {'year': 2020, 'month': 4, 'day': 6, 'hour': 2})
+    event = create_event()
+    client.put(f"api/events/{event['id']}/publish")
+
+    event = create_event()
+    client.put(f"api/events/{event['id']}/publish")
+    client.put(f"api/events/{event['id']}/suspend")
+
+    event = create_event()
+    client.put(f"api/events/{event['id']}/publish")
+    client.put(f"api/events/{event['id']}/suspend")
+
+    mock_date(monkeypatch, {'year': 2020, 'month': 4, 'day': 15, 'hour': 2})
+    event = create_event()
+    client.put(f"api/events/{event['id']}/publish")
+    client.put(f"api/events/{event['id']}/suspend")
+
+    mock_date(monkeypatch, {'year': 2020, 'month': 5, 'day': 15, 'hour': 2})
+    event = create_event()
+    client.put(f"api/events/{event['id']}/publish")
+    client.put(f"api/events/{event['id']}/suspend")
+
+    mock_date(monkeypatch, {'year': 2020, 'month': 6, 'day': 20, 'hour': 2})
+    event = create_event()
+    client.put(f"api/events/{event['id']}/publish")
+    client.put(f"api/events/{event['id']}/suspend")
+
+    response = client.get(URI + '?start_date=2020-01-07&end_date=2022-07-10')
+    assert response.status_code == 200
+    data = response.json()
+    assert data["suspended_by_time"] == [
+        {"date": "2020-04", "suspended": 3},
+        {"date": "2020-05", "suspended": 1},
+        {"date": "2020-06", "suspended": 1},
+    ]
+
+
+def test_suspend_stat_different_dates(monkeypatch):
+    mock_date(monkeypatch, {'year': 2020, 'month': 4, 'day': 6, 'hour': 2})
+    event = create_event()
+    client.put(f"api/events/{event['id']}/publish")
+
+    event = create_event()
+    client.put(f"api/events/{event['id']}/publish")
+    client.put(f"api/events/{event['id']}/suspend")
+
+    event = create_event()
+    client.put(f"api/events/{event['id']}/publish")
+    client.put(f"api/events/{event['id']}/suspend")
+
+    mock_date(monkeypatch, {'year': 2020, 'month': 4, 'day': 15, 'hour': 2})
+    event = create_event()
+    client.put(f"api/events/{event['id']}/publish")
+    client.put(f"api/events/{event['id']}/suspend")
+
+    mock_date(monkeypatch, {'year': 2020, 'month': 5, 'day': 15, 'hour': 2})
+    event = create_event()
+    client.put(f"api/events/{event['id']}/publish")
+    client.put(f"api/events/{event['id']}/suspend")
+
+    mock_date(monkeypatch, {'year': 2020, 'month': 6, 'day': 20, 'hour': 2})
+    event = create_event()
+    client.put(f"api/events/{event['id']}/publish")
+    client.put(f"api/events/{event['id']}/suspend")
+
+    response = client.get(URI + '?start_date=2020-04-07&end_date=2022-07-10')
+    assert response.status_code == 200
+    data = response.json()
+    assert data["suspended_by_time"] == [
+        {"date": "2020-04", "suspended": 1},
+        {"date": "2020-05", "suspended": 1},
+        {"date": "2020-06", "suspended": 1},
+    ]
