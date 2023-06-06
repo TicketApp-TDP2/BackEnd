@@ -656,3 +656,54 @@ def test_stat_booking_verified_by_year_date_filter(monkeypatch):
     assert response.status_code == 200
     data = response.json()
     assert data["verified_bookings"] == [{"date": "2022", "bookings": 2}]
+
+
+def test_complaint_stat(monkeypatch):
+    mock_date(monkeypatch, {'year': 2020, 'month': 4, 'day': 6, 'hour': 2})
+    organizer = create_organizer({'email': 'email@mail.com', 'id': '123'})
+    complainer = create_user({'email': 'complainer@mail.com', 'id': '234'})
+    event = create_event({'organizer': organizer['id']})
+    complainer2 = create_user({'email': 'complainer2@mail.com', 'id': '2342'})
+    event2 = create_event({'organizer': organizer['id']})
+
+    mock_date(monkeypatch, {'year': 2022, 'month': 4, 'day': 6, 'hour': 2})
+    complaint_body = {
+        "event_id": event['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+    }
+    client.post("api/complaints", json=complaint_body)
+    mock_date(monkeypatch, {'year': 2022, 'month': 4, 'day': 12, 'hour': 2})
+    complaint_body = {
+        "event_id": event['id'],
+        "complainer_id": complainer2['id'],
+        "type": "Spam",
+        "description": "description",
+    }
+    client.post("api/complaints", json=complaint_body)
+    mock_date(monkeypatch, {'year': 2022, 'month': 5, 'day': 6, 'hour': 2})
+    complaint_body = {
+        "event_id": event2['id'],
+        "complainer_id": complainer['id'],
+        "type": "Spam",
+        "description": "description",
+    }
+    client.post("api/complaints", json=complaint_body)
+    mock_date(monkeypatch, {'year': 2022, 'month': 6, 'day': 6, 'hour': 2})
+    complaint_body = {
+        "event_id": event2['id'],
+        "complainer_id": complainer2['id'],
+        "type": "Spam",
+        "description": "description",
+    }
+    client.post("api/complaints", json=complaint_body)
+
+    response = client.get(URI + '?start_date=2022-01-07&end_date=2022-07-10')
+    assert response.status_code == 200
+    data = response.json()
+    assert data["complaints_by_time"] == [
+        {"date": "2022-04", "complaints": 2},
+        {"date": "2022-05", "complaints": 1},
+        {"date": "2022-06", "complaints": 1},
+    ]

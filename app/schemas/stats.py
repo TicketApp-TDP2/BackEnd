@@ -5,6 +5,7 @@ from app.models.stat import (
     AppStats,
     OrganizerStat,
     VerifiedBookingStat,
+    ComplaintsByTimeStat,
 )
 
 
@@ -52,10 +53,23 @@ class VerifiedBookingStatSchema(BaseModel):
         )
 
 
+class ComplaintsByTimeStatSchema(BaseModel):
+    date: str = Field(...)
+    complaints: int = Field(..., example=0)
+
+    @classmethod
+    def from_model(cls, stat: ComplaintsByTimeStat) -> ComplaintsByTimeStatSchema:
+        return ComplaintsByTimeStatSchema(
+            date=stat.date,
+            complaints=stat.complaints,
+        )
+
+
 class AppStatsSchema(BaseModel):
     event_states: EventStatesStatSchema
     top_organizers: list[OrganizerStatSchema]
     verified_bookings: list[VerifiedBookingStatSchema]
+    complaints_by_time: list[ComplaintsByTimeStatSchema]
 
     @classmethod
     def from_model(cls, stats: AppStats) -> AppStatsSchema:
@@ -74,10 +88,15 @@ class AppStatsSchema(BaseModel):
             VerifiedBookingStatSchema.from_model(booking)
             for booking in stats.verified_bookings
         ]
+        complaints_by_time = [
+            ComplaintsByTimeStatSchema.from_model(complaint)
+            for complaint in stats.complaints_by_time
+        ]
         return AppStatsSchema(
             event_states=event_states,
             top_organizers=top_organizers,
             verified_bookings=verified_bookings,
+            complaints_by_time=complaints_by_time,
         )
 
 

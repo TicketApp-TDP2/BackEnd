@@ -4,6 +4,7 @@ from app.repositories.event import (
 )
 from app.repositories.organizers import OrganizerRepository
 from app.repositories.bookings import BookingRepository
+from app.repositories.complaints import ComplaintRepository
 from app.config.logger import setup_logger
 from app.schemas.stats import StatParams, AppStatsSchema
 from app.models.stat import AppStats, OrganizerStat
@@ -17,12 +18,14 @@ class GetStatsCommand:
         event_repository: EventRepository,
         organizer_repository: OrganizerRepository,
         booking_repository: BookingRepository,
+        complaint_repository: ComplaintRepository,
         params: StatParams,
     ):
         self.event_repository = event_repository
         self.params = params
         self.organizer_repository = organizer_repository
         self.booking_repository = booking_repository
+        self.complaint_repository = complaint_repository
 
     def execute(self) -> AppStatsSchema:
         self.event_repository.update_state_all_events()
@@ -41,11 +44,15 @@ class GetStatsCommand:
         verified_bookings_stat = self.booking_repository.get_verified_bookings_stat(
             self.params.start_date, self.params.end_date, self.params.group_by
         )
+        complaints_by_time = self.complaint_repository.get_complaints_by_time(
+            self.params.start_date, self.params.end_date
+        )
 
         stats = AppStats(
             event_states=event_states_stat,
             top_organizers=top_organizers_stat,
             verified_bookings=verified_bookings_stat,
+            complaints_by_time=complaints_by_time,
         )
         return AppStatsSchema.from_model(stats)
 
