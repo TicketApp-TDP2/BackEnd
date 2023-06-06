@@ -25,9 +25,10 @@ class EventStatesStat:
 
 
 class OrganizerStat:
-    def __init__(self, name: str, events: int):
+    def __init__(self, name: str, verified_bookings: int, id: str):
         self.name = name
-        self.events = events
+        self.verified_bookings = verified_bookings
+        self.id = id
 
 
 class VerifiedBookingStat:

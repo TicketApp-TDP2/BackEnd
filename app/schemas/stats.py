@@ -31,13 +31,15 @@ class EventStatesStatSchema(BaseModel):
 
 class OrganizerStatSchema(BaseModel):
     name: str = Field(..., example="Organizer")
-    events: int = Field(..., example=0)
+    verified_bookings: int = Field(..., example=0)
+    id: str = Field(..., example="1")
 
     @classmethod
     def from_model(cls, stat: OrganizerStat) -> OrganizerStatSchema:
         return OrganizerStatSchema(
             name=stat.name,
-            events=stat.events,
+            verified_bookings=stat.verified_bookings,
+            id=stat.id,
         )
 
 
