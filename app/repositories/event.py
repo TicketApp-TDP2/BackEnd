@@ -234,17 +234,13 @@ class PersistentEventRepository(EventRepository):
                     'created_at': {
                         '$gte': start_date,
                         '$lte': end_date,
-                    },
-                    '$or': [
-                        {'state': State.Publicado.value},
-                        {'state': State.Finalizado.value},
-                    ],
+                    }
                 }
             },
             {
                 '$group': {
                     '_id': '$organizer',
-                    'count': {'$sum': 1},
+                    'count': {'$sum': '$verified_vacants'},
                 }
             },
             {
@@ -253,12 +249,18 @@ class PersistentEventRepository(EventRepository):
                     'count': '$count',
                 }
             },
+            {'$match': {'count': {'$gt': 0}}},
             {'$sort': {'count': -1}},
             {'$limit': 10},
         ]
         result = self.events.aggregate(pipeline)
         return [
-            OrganizerStat(name=doc['organizer'], events=doc['count']) for doc in result
+            OrganizerStat(
+                name=doc['organizer'],
+                verified_bookings=doc['count'],
+                id=doc['organizer'],
+            )
+            for doc in result
         ]
 
     def __serialize_search(self, search: Search) -> dict:

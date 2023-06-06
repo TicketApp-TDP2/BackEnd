@@ -34,7 +34,9 @@ class GetStatsCommand:
         )
         top_organizers_stat = [
             OrganizerStat(
-                name=self.get_organizer_name(organizer.name), events=organizer.events
+                name=self.get_organizer_name(organizer.id),
+                verified_bookings=organizer.verified_bookings,
+                id=organizer.id,
             )
             for organizer in top_organizers_stat
         ]

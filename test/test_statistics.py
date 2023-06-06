@@ -301,16 +301,41 @@ def test_stat_top_organizers(monkeypatch):
         }
     )
 
+    user = create_user({"id": "123", "email": "user@mail.com"})
+    user2 = create_user({"id": "1223", "email": "user2@mail.com"})
+
     event = create_event(
         {"organizer": organizer["id"], "date": "2022-05-10"}
     )  # Publicado
     client.put(f'api/events/{event["id"]}/publish')
+    booking_body = {
+        "event_id": event['id'],
+        "reserver_id": user['id'],
+    }
+    response = client.post('api/bookings', json=booking_body)
+    body = {"event_id": event["id"]}
+    client.put('api/bookings' + f'/{response.json()["id"]}/verify', json=body)
     create_event({"organizer": organizer["id"], "date": "2022-05-10"})  # Borrador
 
     event = create_event(
         {"organizer": organizer2["id"], "date": "2022-05-10"}
     )  # Publicado
     client.put(f'api/events/{event["id"]}/publish')
+    booking_body = {
+        "event_id": event['id'],
+        "reserver_id": user['id'],
+    }
+    response = client.post('api/bookings', json=booking_body)
+    body = {"event_id": event["id"]}
+    client.put('api/bookings' + f'/{response.json()["id"]}/verify', json=body)
+    booking_body = {
+        "event_id": event['id'],
+        "reserver_id": user2['id'],
+    }
+    response = client.post('api/bookings', json=booking_body)
+    body = {"event_id": event["id"]}
+    client.put('api/bookings' + f'/{response.json()["id"]}/verify', json=body)
+
     event = create_event(
         {"organizer": organizer2["id"], "date": "2022-05-06"}
     )  # Terminado
@@ -326,8 +351,8 @@ def test_stat_top_organizers(monkeypatch):
     assert response.status_code == 200
     data = response.json()
     assert data["top_organizers"] == [
-        {"name": "organizer2 b", "events": 2},
-        {"name": "organizer1 a", "events": 1},
+        {"name": "organizer2 b", "verified_bookings": 2, 'id': '223'},
+        {"name": "organizer1 a", "verified_bookings": 1, 'id': '123'},
     ]
 
 
@@ -366,24 +391,57 @@ def test_stat_top_organizers_different_dates(monkeypatch):
         }
     )
 
+    user = create_user({"id": "123", "email": "user@mail.com"})
+    user2 = create_user({"id": "1223", "email": "user2@mail.com"})
+
     event = create_event(
         {"organizer": organizer["id"], "date": "2022-05-10"}
     )  # Publicado
     client.put(f'api/events/{event["id"]}/publish')
+    booking_body = {
+        "event_id": event['id'],
+        "reserver_id": user['id'],
+    }
+    response = client.post('api/bookings', json=booking_body)
+    body = {"event_id": event["id"]}
+    client.put('api/bookings' + f'/{response.json()["id"]}/verify', json=body)
+
     mock_date(monkeypatch, {'year': 2022, 'month': 5, 'day': 5, 'hour': 2})
     event = create_event(
         {"organizer": organizer["id"], "date": "2022-05-10"}
     )  # Publicado
     client.put(f'api/events/{event["id"]}/publish')
+    booking_body = {
+        "event_id": event['id'],
+        "reserver_id": user['id'],
+    }
+    response = client.post('api/bookings', json=booking_body)
+    body = {"event_id": event["id"]}
+    client.put('api/bookings' + f'/{response.json()["id"]}/verify', json=body)
 
     event = create_event(
         {"organizer": organizer2["id"], "date": "2022-05-10"}
     )  # Publicado
     client.put(f'api/events/{event["id"]}/publish')
+    booking_body = {
+        "event_id": event['id'],
+        "reserver_id": user['id'],
+    }
+    response = client.post('api/bookings', json=booking_body)
+    body = {"event_id": event["id"]}
+    client.put('api/bookings' + f'/{response.json()["id"]}/verify', json=body)
+
     event = create_event(
         {"organizer": organizer2["id"], "date": "2022-05-06"}
     )  # Terminado
     client.put(f'api/events/{event["id"]}/publish')
+    booking_body = {
+        "event_id": event['id'],
+        "reserver_id": user['id'],
+    }
+    response = client.post('api/bookings', json=booking_body)
+    body = {"event_id": event["id"]}
+    client.put('api/bookings' + f'/{response.json()["id"]}/verify', json=body)
 
     event = create_event({"organizer": organizer3["id"], "date": "2022-05-06"})
 
@@ -392,9 +450,8 @@ def test_stat_top_organizers_different_dates(monkeypatch):
     assert response.status_code == 200
     data = response.json()
     assert data["top_organizers"] == [
-        {"name": "organizer2 b", "events": 2},
-        {"name": "organizer3 c", "events": 1},
-        {"name": "organizer1 a", "events": 1},
+        {"name": "organizer2 b", "verified_bookings": 2, "id": "223"},
+        {"name": "organizer1 a", "verified_bookings": 1, "id": "123"},
     ]
 
 
@@ -411,10 +468,18 @@ def test_stat_top_organizers_more_than_10(monkeypatch):
         )
         for i in range(1, 12)
     ]
+    user = create_user({"id": "123", "email": "user@mail.com"})
 
     for organizer in organizers:
         event = create_event({"organizer": organizer["id"], "date": "2022-05-10"})
         client.put(f'api/events/{event["id"]}/publish')
+        booking_body = {
+            "event_id": event['id'],
+            "reserver_id": user['id'],
+        }
+        response = client.post('api/bookings', json=booking_body)
+        body = {"event_id": event["id"]}
+        client.put('api/bookings' + f'/{response.json()["id"]}/verify', json=body)
 
     response = client.get(URI + '?start_date=2022-05-05&end_date=2022-05-07')
     assert response.status_code == 200
