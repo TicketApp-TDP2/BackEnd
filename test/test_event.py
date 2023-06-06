@@ -1175,6 +1175,7 @@ def test_suspend_organizer_event(monkeypatch):
     data = response.json()
     assert response.status_code == 200
     assert data['state'] == 'Suspendido'
+    assert data['suspended_at'] == '2023-02-02'
 
 
 def test_suspend_organizer_event_borrador(monkeypatch):
