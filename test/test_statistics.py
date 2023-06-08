@@ -848,3 +848,105 @@ def test_suspend_stat_different_dates(monkeypatch):
         {"date": "2020-05", "suspended": 1},
         {"date": "2020-06", "suspended": 1},
     ]
+
+
+def test_events_by_date(monkeypatch):
+    mock_date(monkeypatch, {'year': 2020, 'month': 4, 'day': 6, 'hour': 2})
+    event = create_event()
+
+    event = create_event()
+
+    mock_date(monkeypatch, {'year': 2020, 'month': 4, 'day': 15, 'hour': 2})
+    event = create_event()
+
+    event = create_event()
+
+    mock_date(monkeypatch, {'year': 2020, 'month': 5, 'day': 15, 'hour': 2})
+    event = create_event()
+
+    mock_date(monkeypatch, {'year': 2020, 'month': 6, 'day': 20, 'hour': 2})
+    event = create_event()
+
+    response = client.get(URI + '?start_date=2020-04-07&end_date=2022-07-10')
+    assert response.status_code == 200
+    data = response.json()
+    assert data["events_by_time"] == [
+        {"date": "2020-04", "events": 2},
+        {"date": "2020-05", "events": 1},
+        {"date": "2020-06", "events": 1},
+    ]
+
+
+def test_events_published_by_date(monkeypatch):
+    mock_date(monkeypatch, {'year': 2020, 'month': 4, 'day': 6, 'hour': 2})
+    event = create_event()
+    client.put(f"api/events/{event['id']}/publish")
+
+    event = create_event()
+    client.put(f"api/events/{event['id']}/publish")
+
+    mock_date(monkeypatch, {'year': 2020, 'month': 4, 'day': 15, 'hour': 2})
+    event = create_event()
+    client.put(f"api/events/{event['id']}/publish")
+
+    event = create_event()
+    client.put(f"api/events/{event['id']}/publish")
+
+    event = create_event()
+
+    mock_date(monkeypatch, {'year': 2020, 'month': 5, 'day': 15, 'hour': 2})
+    event = create_event()
+    client.put(f"api/events/{event['id']}/publish")
+
+    event = create_event()
+
+    mock_date(monkeypatch, {'year': 2020, 'month': 6, 'day': 20, 'hour': 2})
+    event = create_event()
+    client.put(f"api/events/{event['id']}/publish")
+
+    response = client.get(URI + '?start_date=2020-04-07&end_date=2022-07-10')
+    assert response.status_code == 200
+    data = response.json()
+    assert data["events_published_by_time"] == [
+        {"date": "2020-04", "events": 2},
+        {"date": "2020-05", "events": 1},
+        {"date": "2020-06", "events": 1},
+    ]
+
+
+def test_events_published_by_date_2(monkeypatch):
+    mock_date(monkeypatch, {'year': 2020, 'month': 4, 'day': 5, 'hour': 2})
+    event = create_event()
+    client.put(f"api/events/{event['id']}/publish")
+
+    event = create_event()
+    client.put(f"api/events/{event['id']}/publish")
+
+    mock_date(monkeypatch, {'year': 2020, 'month': 4, 'day': 6, 'hour': 2})
+    event = create_event()
+    mock_date(monkeypatch, {'year': 2020, 'month': 4, 'day': 7, 'hour': 2})
+    client.put(f"api/events/{event['id']}/publish")
+
+    event = create_event()
+    client.put(f"api/events/{event['id']}/publish")
+
+    event = create_event()
+
+    mock_date(monkeypatch, {'year': 2020, 'month': 5, 'day': 15, 'hour': 2})
+    event = create_event()
+    client.put(f"api/events/{event['id']}/publish")
+
+    event = create_event()
+
+    mock_date(monkeypatch, {'year': 2020, 'month': 6, 'day': 20, 'hour': 2})
+    event = create_event()
+    client.put(f"api/events/{event['id']}/publish")
+
+    response = client.get(URI + '?start_date=2020-04-07&end_date=2022-07-10')
+    assert response.status_code == 200
+    data = response.json()
+    assert data["events_published_by_time"] == [
+        {"date": "2020-04", "events": 2},
+        {"date": "2020-05", "events": 1},
+        {"date": "2020-06", "events": 1},
+    ]

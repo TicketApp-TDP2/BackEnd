@@ -54,12 +54,22 @@ class GetStatsCommand:
             self.params.start_date, self.params.end_date
         )
 
+        events_by_time = self.event_repository.get_events_by_time(
+            self.params.start_date, self.params.end_date
+        )
+
+        events_published_by_time = self.event_repository.get_events_published_by_time(
+            self.params.start_date, self.params.end_date
+        )
+
         stats = AppStats(
             event_states=event_states_stat,
             top_organizers=top_organizers_stat,
             verified_bookings=verified_bookings_stat,
             complaints_by_time=complaints_by_time,
             suspended_by_time=suspended_by_time,
+            events_by_time=events_by_time,
+            events_published_by_time=events_published_by_time,
         )
         return AppStatsSchema.from_model(stats)
 

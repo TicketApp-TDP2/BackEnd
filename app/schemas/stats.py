@@ -7,6 +7,8 @@ from app.models.stat import (
     VerifiedBookingStat,
     ComplaintsByTimeStat,
     SuspendedEventStat,
+    EventByTimeStat,
+    EventPublishedByTimeStat,
 )
 
 
@@ -80,12 +82,40 @@ class SuspendedEventStatSchema(BaseModel):
         )
 
 
+class EventByTimeStatSchema(BaseModel):
+    date: str = Field(...)
+    events: int = Field(..., example=0)
+
+    @classmethod
+    def from_model(cls, stat: EventByTimeStat) -> EventByTimeStatSchema:
+        return EventByTimeStatSchema(
+            date=stat.date,
+            events=stat.events,
+        )
+
+
+class EventPublishedByTimeStatSchema(BaseModel):
+    date: str = Field(...)
+    events: int = Field(..., example=0)
+
+    @classmethod
+    def from_model(
+        cls, stat: EventPublishedByTimeStat
+    ) -> EventPublishedByTimeStatSchema:
+        return EventPublishedByTimeStatSchema(
+            date=stat.date,
+            events=stat.events,
+        )
+
+
 class AppStatsSchema(BaseModel):
     event_states: EventStatesStatSchema
     top_organizers: list[OrganizerStatSchema]
     verified_bookings: list[VerifiedBookingStatSchema]
     complaints_by_time: list[ComplaintsByTimeStatSchema]
     suspended_by_time: list[SuspendedEventStatSchema]
+    events_by_time: list[EventByTimeStatSchema]
+    events_published_by_time: list[EventPublishedByTimeStatSchema]
 
     @classmethod
     def from_model(cls, stats: AppStats) -> AppStatsSchema:
@@ -112,12 +142,21 @@ class AppStatsSchema(BaseModel):
             SuspendedEventStatSchema.from_model(suspended)
             for suspended in stats.suspended_by_time
         ]
+        events_by_time = [
+            EventByTimeStatSchema.from_model(event) for event in stats.events_by_time
+        ]
+        events_published_by_time = [
+            EventPublishedByTimeStatSchema.from_model(event)
+            for event in stats.events_published_by_time
+        ]
         return AppStatsSchema(
             event_states=event_states,
             top_organizers=top_organizers,
             verified_bookings=verified_bookings,
             complaints_by_time=complaints_by_time,
             suspended_by_time=suspended_by_time,
+            events_by_time=events_by_time,
+            events_published_by_time=events_published_by_time,
         )
 
 

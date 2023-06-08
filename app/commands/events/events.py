@@ -172,6 +172,9 @@ class PublishEventCommand:
         event = self.event_repository.get_event(self.id)
         if event.state == State.Borrador:
             event = self.event_repository.update_state_event(self.id, State.Publicado)
+            event = self.event_repository.update_published_at(
+                self.id, str(getNow().date())
+            )
         else:
             raise EventNotBorradorError
         return EventSchema.from_model(event)
@@ -273,6 +276,7 @@ class UpdateEventCommand:
             collaborators=event.collaborators,
             created_at=event.created_at,
             suspended_at=event.suspended_at,
+            published_at=event.published_at,
         )
         if event.start_time >= event.end_time:
             raise EventTimeError

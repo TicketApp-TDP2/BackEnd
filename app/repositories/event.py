@@ -8,7 +8,13 @@ from app.models.event import Type, Event, Location, Agenda, Faq, State, Collabor
 from app.repositories.errors import EventNotFoundError
 from datetime import date, time, timedelta
 from app.utils.now import getNow
-from app.models.stat import EventStatesStat, OrganizerStat, SuspendedEventStat
+from app.models.stat import (
+    EventStatesStat,
+    OrganizerStat,
+    SuspendedEventStat,
+    EventByTimeStat,
+    EventPublishedByTimeStat,
+)
 
 EARTH_RADIUS_METERS = 6_371_000
 
@@ -74,6 +80,10 @@ class EventRepository(ABC):
         pass
 
     @abstractmethod
+    def update_published_at(self, id: str, published_at: str) -> Event:
+        pass
+
+    @abstractmethod
     def update_verified_vacants(self, id: str, verified_vacants: int) -> Event:
         pass
 
@@ -101,6 +111,18 @@ class EventRepository(ABC):
 
     @abstractmethod
     def update_suspended_at(self, id: str, suspended_at: str) -> Event:
+        pass
+
+    @abstractmethod
+    def get_events_by_time(
+        self, start_date: str, end_date: str
+    ) -> list[EventByTimeStat]:
+        pass
+
+    @abstractmethod
+    def get_events_published_by_time(
+        self, start_date: str, end_date: str
+    ) -> list[EventPublishedByTimeStat]:
         pass
 
 
@@ -181,6 +203,13 @@ class PersistentEventRepository(EventRepository):
     def update_suspended_at(self, id: str, suspended_at: str) -> Event:
         event = self.get_event(id)
         event.suspended_at = suspended_at
+        data = self.__serialize_event(event)
+        self.events.update_one({'_id': id}, {'$set': data})
+        return event
+
+    def update_published_at(self, id: str, published_at: str) -> Event:
+        event = self.get_event(id)
+        event.published_at = published_at
         data = self.__serialize_event(event)
         self.events.update_one({'_id': id}, {'$set': data})
         return event
@@ -274,6 +303,85 @@ class PersistentEventRepository(EventRepository):
                 name=doc['organizer'],
                 verified_bookings=doc['count'],
                 id=doc['organizer'],
+            )
+            for doc in result
+        ]
+
+    def get_events_by_time(
+        self, start_date: str, end_date: str
+    ) -> list[EventByTimeStat]:
+        pipeline = [
+            {
+                '$match': {
+                    'created_at': {
+                        '$gte': start_date,
+                        '$lte': end_date,
+                    }
+                }
+            },
+            {'$project': {'created_at': {'$substr': ['$created_at', 0, 7]}}},
+            {
+                '$group': {
+                    '_id': '$created_at',
+                    'count': {'$sum': 1},
+                }
+            },
+            {
+                '$project': {
+                    'created_at': '$_id',
+                    'count': '$count',
+                }
+            },
+            {'$sort': {'created_at': 1}},
+        ]
+        result = self.events.aggregate(pipeline)
+        return [
+            EventByTimeStat(
+                date=doc['created_at'],
+                events=doc['count'],
+            )
+            for doc in result
+        ]
+
+    def get_events_published_by_time(
+        self, start_date: str, end_date: str
+    ) -> list[EventPublishedByTimeStat]:
+        pipeline = [
+            {
+                '$match': {
+                    'published_at': {
+                        '$ne': "Not_published",
+                    }
+                }
+            },
+            {
+                '$match': {
+                    'published_at': {
+                        '$gte': start_date,
+                        '$lte': end_date,
+                    }
+                }
+            },
+            {'$project': {'published_at': {'$substr': ['$published_at', 0, 7]}}},
+            {
+                '$group': {
+                    '_id': '$published_at',
+                    'count': {'$sum': 1},
+                }
+            },
+            {
+                '$project': {
+                    'published_at': '$_id',
+                    'count': '$count',
+                }
+            },
+            {'$sort': {'published_at': 1}},
+        ]
+        result = self.events.aggregate(pipeline)
+        return [
+            EventByTimeStat(
+                date=doc['published_at'],
+                events=doc['count'],
             )
             for doc in result
         ]
@@ -446,6 +554,7 @@ class PersistentEventRepository(EventRepository):
             'collaborators': serialized_collaborators,
             'created_at': str(event.created_at),
             'suspended_at': event.suspended_at,
+            'published_at': event.published_at,
         }
 
         return serialized
@@ -516,4 +625,5 @@ class PersistentEventRepository(EventRepository):
             collaborators=deserialized_collaborators,
             created_at=date.fromisoformat(data['created_at']),
             suspended_at=data['suspended_at'],
+            published_at=data['published_at'],
         )

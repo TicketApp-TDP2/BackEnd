@@ -49,6 +49,18 @@ class SuspendedEventStat:
         self.suspended = suspended
 
 
+class EventByTimeStat:
+    def __init__(self, date: str, events: int):
+        self.date = date
+        self.events = events
+
+
+class EventPublishedByTimeStat:
+    def __init__(self, date: str, events: int):
+        self.date = date
+        self.events = events
+
+
 class AppStats:
     def __init__(
         self,
@@ -57,9 +69,13 @@ class AppStats:
         verified_bookings: list[VerifiedBookingStat],
         complaints_by_time: list[ComplaintsByTimeStat],
         suspended_by_time: list[SuspendedEventStat],
+        events_by_time: list[EventByTimeStat],
+        events_published_by_time: list[EventPublishedByTimeStat],
     ):
         self.event_states = event_states
         self.top_organizers = top_organizers
         self.verified_bookings = verified_bookings
         self.complaints_by_time = complaints_by_time
         self.suspended_by_time = suspended_by_time
+        self.events_by_time = events_by_time
+        self.events_published_by_time = events_published_by_time
