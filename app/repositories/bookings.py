@@ -4,6 +4,7 @@ from app.models.booking import Booking
 from app.schemas.stats import EventBookingsByHourStat
 from app.repositories.errors import BookingNotFoundError
 from app.utils.now import getNow
+from app.models.stat import VerifiedBookingStat
 
 
 class BookingRepository(ABC):
@@ -37,6 +38,12 @@ class BookingRepository(ABC):
 
     @abstractmethod
     def get_bookings_by_hour(self, event_id: str) -> list[Booking]:
+        pass
+
+    @abstractmethod
+    def get_verified_bookings_stat(
+        self, start_date: str, end_date: str, group_by: str
+    ) -> list[VerifiedBookingStat]:
         pass
 
 
@@ -92,6 +99,28 @@ class PersistentBookingRepository(BookingRepository):
         data = self.__serialize_booking(booking)
         self.bookings.update_one({'_id': booking_id}, {'$set': data})
         return booking
+
+    def get_verified_bookings_stat(
+        self, start_date: str, end_date: str, group_by: str
+    ) -> list[VerifiedBookingStat]:
+        match group_by:
+            case "day":
+                substr = 10
+            case "month":
+                substr = 7
+            case "year":
+                substr = 4
+            case _:
+                substr = 10
+        pipeline = [
+            {'$match': {'verified': True}},
+            {'$match': {'verified_time': {'$gte': start_date, '$lte': end_date}}},
+            {'$project': {'verified_time': {'$substr': ['$verified_time', 0, substr]}}},
+            {'$group': {'_id': '$verified_time', 'count': {'$sum': 1}}},
+            {'$sort': {'_id': 1}},
+        ]
+        stats = self.bookings.aggregate(pipeline)
+        return [VerifiedBookingStat(stat["_id"], stat["count"]) for stat in stats]
 
     def __serialize_booking(self, booking: Booking) -> dict:
         serialized = {

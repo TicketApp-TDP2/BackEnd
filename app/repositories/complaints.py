@@ -10,6 +10,7 @@ from app.repositories.errors import ComplaintNotFoundError
 from bson.son import SON
 from datetime import date
 from typing import Optional
+from app.models.stat import ComplaintsByTimeStat
 
 
 class Filter:
@@ -55,6 +56,12 @@ class ComplaintRepository(ABC):
     def get_complaints_ranking_by_event(
         self, filter: Filter
     ) -> list[ComplaintEventRanking]:
+        pass
+
+    @abstractmethod
+    def get_complaints_by_time(
+        self, start: str, end: str
+    ) -> list[ComplaintsByTimeStat]:
         pass
 
 
@@ -117,6 +124,18 @@ class PersistentComplaintRepository(ComplaintRepository):
         return [
             ComplaintEventRanking(event['_id'], event['count']) for event in ranking
         ]
+
+    def get_complaints_by_time(
+        self, start: str, end: str
+    ) -> list[ComplaintsByTimeStat]:
+        pipeline = [
+            {'$match': {'date': {'$gte': start, '$lte': end}}},
+            {'$project': {'date': {'$substr': ['$date', 0, 7]}}},
+            {'$group': {'_id': '$date', 'count': {'$sum': 1}}},
+            {'$sort': {'_id': 1}},
+        ]
+        stats = self.complaints.aggregate(pipeline)
+        return [ComplaintsByTimeStat(stat['_id'], stat['count']) for stat in stats]
 
     def __get_pipeline(self, filter: Filter):
         pipeline = []

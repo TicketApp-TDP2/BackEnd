@@ -95,6 +95,9 @@ class Event:
         state: State,
         verified_vacants: int,
         collaborators: list[Collaborator],
+        created_at: date,
+        suspended_at: str,
+        published_at: str,
     ):
         self.name = name
         self.description = description
@@ -115,6 +118,9 @@ class Event:
         self.state = state
         self.verified_vacants = verified_vacants
         self.collaborators = collaborators
+        self.created_at = created_at
+        self.suspended_at = suspended_at
+        self.published_at = published_at
 
     @classmethod
     def new(
@@ -134,6 +140,7 @@ class Event:
         vacants: int,
         vacants_left: int,
         FAQ: list[Faq],
+        created_at: date,
     ) -> Event:
         return Event(
             id=str(uuid.uuid4()),
@@ -155,4 +162,7 @@ class Event:
             state=State.Borrador,
             verified_vacants=0,
             collaborators=[],
+            created_at=created_at,
+            suspended_at="Not_suspended",
+            published_at="Not_published",
         )

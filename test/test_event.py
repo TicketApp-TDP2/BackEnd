@@ -239,6 +239,9 @@ def test_get_event_exists(monkeypatch):
             'state': 'Borrador',
             'verified_vacants': 0,
             'collaborators': [],
+            'created_at': "2023-02-02",
+            'suspended_at': "Not_suspended",
+            'published_at': "Not_published",
         },
     )
 
@@ -853,6 +856,9 @@ def test_event_update_borrador(monkeypatch):
             "verified_vacants": event["verified_vacants"],
             "organizer": event["organizer"],
             'collaborators': [],
+            "created_at": "2023-02-02",
+            "suspended_at": "Not_suspended",
+            "published_at": "Not_published",
         },
     )
     assert data == new_body
@@ -880,6 +886,9 @@ def test_event_update_publicado(monkeypatch):
             "verified_vacants": event["verified_vacants"],
             "organizer": event["organizer"],
             'collaborators': [],
+            "created_at": "2023-02-02",
+            "suspended_at": "Not_suspended",
+            "published_at": "2023-02-02",
         },
     )
     assert data == new_body
@@ -1055,6 +1064,9 @@ def test_event_update_vacants(monkeypatch):
             "verified_vacants": event["verified_vacants"],
             "organizer": event["organizer"],
             'collaborators': [],
+            "created_at": "2023-02-02",
+            "suspended_at": "Not_suspended",
+            "published_at": "2023-02-02",
         },
     )
     assert data == new_body
@@ -1167,6 +1179,7 @@ def test_suspend_organizer_event(monkeypatch):
     data = response.json()
     assert response.status_code == 200
     assert data['state'] == 'Suspendido'
+    assert data['suspended_at'] == '2023-02-02'
 
 
 def test_suspend_organizer_event_borrador(monkeypatch):
@@ -1989,3 +2002,25 @@ def test_update_event_with_agenda_not_ending():
     data = response.json()
     assert response.status_code == 400
     assert data['detail'] == 'agenda_can_not_end_before_event_ends'
+
+
+def test_suspend_event_has_date(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+    event = create_event()
+    client.put(f"{URI}/{event['id']}/publish")
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 3, "hour": 15})
+    response = client.put(f"{URI}/{event['id']}/suspend")
+    data = response.json()
+    assert response.status_code == 200
+    assert data['state'] == 'Suspendido'
+    assert data['suspended_at'] == '2023-02-03'
+
+
+def test_publish_event_date(monkeypatch):
+    mock_date(monkeypatch, {"year": 2023, "month": 2, "day": 2, "hour": 15})
+    event = create_event()
+    response = client.put(f"{URI}/{event['id']}/publish")
+    data = response.json()
+    assert response.status_code == 200
+    assert data['state'] == 'Publicado'
+    assert data['published_at'] == '2023-02-02'

@@ -84,6 +84,9 @@ class EventSchema(EventSchemaBase):
     state: State
     verified_vacants: int
     collaborators: List[CollaboratorSchema]
+    created_at: date
+    suspended_at: str
+    published_at: str
 
     @classmethod
     def from_model(cls, event: Event) -> EventSchema:
@@ -139,4 +142,7 @@ class EventSchema(EventSchemaBase):
             state=State(event.state),
             verified_vacants=event.verified_vacants,
             collaborators=collaborators,
+            created_at=event.created_at,
+            suspended_at=event.suspended_at,
+            published_at=event.published_at,
         )

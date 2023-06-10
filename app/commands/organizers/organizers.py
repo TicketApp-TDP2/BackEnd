@@ -11,6 +11,7 @@ from app.repositories.organizers import (
 )
 from app.repositories.event import EventRepository, Search
 from app.config.logger import setup_logger
+from app.utils.now import getNow
 
 logger = setup_logger(__name__)
 
@@ -118,6 +119,9 @@ class SuspendOrganizerCommand:
         for event in events:
             if event.state == State.Publicado:
                 self.event_repository.update_state_event(event.id, State.Suspendido)
+                self.event_repository.update_suspended_at(
+                    event.id, str(getNow().date())
+                )
         return OrganizerSchema.from_model(organizer)
 
 
